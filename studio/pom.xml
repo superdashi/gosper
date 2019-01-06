@@ -1,0 +1,76 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>gosper-studio</artifactId>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.superdashi.gosper</groupId>
+    <artifactId>gosper</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <name>Gosper Studio</name>
+  <description>Rendering-to and composing surfaces.</description>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <runOrder>alphabetical</runOrder>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-color</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-layout</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.collect</groupId>
+      <artifactId>collect</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.ezo</groupId>
+      <artifactId>ezo</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.fundament</groupId>
+      <artifactId>fundament</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.geom</groupId>
+      <artifactId>geom-all</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.geom</groupId>
+      <artifactId>geom-awt</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.intgeom</groupId>
+      <artifactId>intgeom</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.streams</groupId>
+      <artifactId>streams</artifactId>
+      <version>3.1.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+
+</project>
