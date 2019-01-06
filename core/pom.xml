@@ -1,0 +1,69 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>gosper-core</artifactId>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.superdashi.gosper</groupId>
+    <artifactId>gosper</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <name>Gosper Core</name>
+  <description>Core code for a digital dashboard display</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-config</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-framework</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-http</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-graphdb</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-util</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.collect</groupId>
+      <artifactId>collect</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.storage</groupId>
+      <artifactId>storage</artifactId>
+      <version>1.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.geom</groupId>
+      <artifactId>geom-core</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.streams</groupId>
+      <artifactId>streams</artifactId>
+      <version>3.1.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.intgeom</groupId>
+      <artifactId>intgeom</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+
+</project>

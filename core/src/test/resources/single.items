@@ -1,0 +1,6 @@
+!prefix ns2:other
+
+ns:name=Singlet
+ns:type=Only
+value=1.5
+ns2:dummy=CHECK
