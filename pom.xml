@@ -53,6 +53,7 @@
 
   <modules>
     <module>color</module>
+    <module>logging</module>
   </modules>
 
 </project>

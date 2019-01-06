@@ -1,0 +1,39 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>gosper-logging</artifactId>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.superdashi.gosper</groupId>
+    <artifactId>gosper</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <name>Gosper Logging</name>
+  <description>An application focused logging framework.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.tomgibara.bits</groupId>
+      <artifactId>bits</artifactId>
+      <version>2.1.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.tries</groupId>
+      <artifactId>tries</artifactId>
+      <version>1.0.2-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.collect</groupId>
+      <artifactId>collect</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.storage</groupId>
+      <artifactId>storage</artifactId>
+      <version>1.0.1-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+
+</project>
