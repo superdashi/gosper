@@ -1,0 +1,124 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>gosper-app</artifactId>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.superdashi.gosper</groupId>
+    <artifactId>gosper</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <name>Gosper Application</name>
+  <description>A digital dashboard application</description>
+
+  <build>
+    <plugins>
+      <!--
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4.1</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <archive>
+            <manifest>
+              <mainClass>com.superdashi.gosper.app.DashiApp</mainClass>
+            </manifest>
+          </archive>
+         <finalName>dashboard-app</finalName>
+        </configuration>
+        <executions>
+          <execution>
+            <id>assemble</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      -->
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4.1</version>
+        <configuration>
+          <descriptor>src/assembly/complete.xml</descriptor>
+          <archive>
+            <manifest>
+              <mainClass>com.superdashi.gosper.app.MicroLauncher</mainClass>
+            </manifest>
+          </archive>
+         <finalName>gosper</finalName>
+         <!-- <finalName>gosper-${version}</finalName> -->
+         <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <id>assemble</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-adafruit</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-awtd</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-core</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-control</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-data</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-display</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-linux</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-logging</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-micro</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-pimoroni</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+
+</project>
