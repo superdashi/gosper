@@ -1,0 +1,165 @@
+package com.superdashi.gosper.layout;
+
+import java.util.function.Function;
+import java.util.stream.StreamSupport;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.superdashi.gosper.layout.Style;
+import com.superdashi.gosper.layout.StyledText;
+import com.superdashi.gosper.layout.StyledText.Segment;
+import com.superdashi.gosper.layout.StyledText.Span;
+
+public class StyledTextTest {
+
+	@Test
+	public void testManipulation() {
+		Style root = new Style().immutable();
+		String text = "this is styled text";
+		StyledText st = new StyledText(root, text);
+		st.root().insertText(7, " truly");
+		Style bold = new Style().textWeight(1).immutable();
+		Style italic = new Style().textItalic(1).immutable();
+		Style under = new Style().textUnderline(1).immutable();
+		Span s1 = st.root().applyStyle(italic, "italic", 8, 13).get(0);
+		st.root().applyStyle(bold, "bold", 8, 9);
+		s1.remove();
+		st.root().applyStyle(italic, "italic", 14, 20);
+		st.root().applyStyle(bold, "bold", 8, 25);
+		st.root().insertText(7, "**");
+
+		Assert.assertEquals(Style.NO_VALUE, st.styleAt(9).textItalic());
+		Assert.assertEquals(Style.NO_VALUE, st.styleAt(9).textWeight());
+
+		Assert.assertEquals(Style.NO_VALUE, st.styleAt(9).textItalic());
+		Assert.assertEquals(1, st.styleAt(10).textWeight());
+
+		Assert.assertEquals(1, st.styleAt(16).textItalic());
+		Assert.assertEquals(1, st.styleAt(16).textWeight());
+
+		Assert.assertEquals("this is** truly styled text", st.root().text());
+		st.root().deleteText(5, 18);
+		st.toString(); // serves as a check for valid indices
+
+		Assert.assertEquals("this yled text", st.text());
+		Span span = st.root().children().get(0).insertStyledText(2, under, "ooo").get();
+		Assert.assertEquals("this yloooed text", st.text());
+		Assert.assertEquals(1, st.styleAt(7).textUnderline());
+		span.delete();
+		Assert.assertEquals("this yled text", st.text());
+		Assert.assertEquals(Style.NO_VALUE, st.styleAt(7).textUnderline());
+
+		st.truncateText(4);
+		Assert.assertEquals("this", st.text());
+		Assert.assertTrue( st.isSingleSpan() );
+	}
+
+	@Test
+	public void testEmpty() {
+		Style root = new Style().immutable();
+		StyledText st = new StyledText(root, "");
+		Assert.assertEquals("", st.root().text().toString());
+		st.root().insertText(0, "TEXT");
+		Assert.assertEquals("TEXT", st.root().text().toString());
+		st.root().deleteText(0, 4);
+		Assert.assertEquals("", st.root().text().toString());
+	}
+
+	@Test
+	public void testMutability() {
+		Style italic = new Style().textItalic(1).immutable();
+		Style root = new Style().immutable();
+		String text1 = "Some test text";
+		String text2 = "Some nice test text";
+		StyledText st = new StyledText(root, text1);
+		st.root().applyStyle(italic, "italic", 5, 9);
+
+		StyledText iv = st.immutableView();
+		StyledText ic = st.immutableCopy();
+		StyledText mc = st.mutableCopy();
+
+		Assert.assertTrue(st.isMutable());
+		Assert.assertFalse(iv.isMutable());
+		Assert.assertFalse(ic.isMutable());
+		Assert.assertTrue(mc.isMutable());
+
+		Assert.assertEquals(text1, st.root().text());
+		st.root().insertText(5, "nice ");
+		Assert.assertEquals(text2, st.root().text());
+		Assert.assertEquals(text2, iv.root().text());
+		Assert.assertEquals(text1, ic.root().text());
+		Assert.assertEquals(text1, mc.root().text());
+
+		st.root().applyStyle(italic, 0, 4);
+		Assert.assertEquals(2, st.root().children().size());
+		Assert.assertEquals(2, iv.root().children().size());
+		Assert.assertEquals(1, ic.root().children().size());
+		Assert.assertEquals(1, mc.root().children().size());
+	}
+
+	@Test
+	public void testSegment() {
+		Style italic = new Style().textItalic(1).immutable();
+		Style bold = new Style().textWeight(1).immutable();
+		Style under = new Style().textUnderline(1).immutable();
+
+		StyledText st = new StyledText("Styling some text is lots of effort.");
+		st.root().applyStyle(italic, "i", 8, 28);
+		st.root().applyStyle(bold, "b", 13, 17);
+		st.root().applyStyle(under, "u", 26, 28);
+
+		Function<Style, String> styleString = s -> (s.textItalic() == 1 ? "italic" : "") + "," +  (s.textWeight() == 1 ? "bold" : "") + "," + (s.textUnderline() == 1 ? "underline" : "");
+		for (Segment s : st.segments()) {
+			System.out.println(s.from + " " + s.to + " " + styleString.apply(s.style) + " \"" + s.text + "\"");
+		}
+		System.out.println(st.root().text());
+		System.out.println(st);
+	}
+
+	@Test
+	public void testOverlapping() {
+		Style italic = new Style().textItalic(1).immutable();
+		Style bold = new Style().textWeight(1).immutable();
+		Style under = new Style().textUnderline(1).immutable();
+		Style blue = new Style().colorFg(0xff0000ff).immutable();
+		Style red = new Style().colorFg(0xffff0000).immutable();
+
+		String str = "This is a styled line of text.";
+		StyledText text = new StyledText(str);
+		Span root = text.root();
+
+		root.applyStyle(italic, 5, 7);
+		root.applyStyle(bold, 8, 16);
+		root.applyStyle(blue, 17, 29);
+		root.applyStyle(under, 17, 21);
+		root.applyStyle(red, 22, 24);
+
+		String chars = StreamSupport.stream(text.segments().spliterator(), false).map(s -> s.text).collect(StringBuilder::new, StringBuilder::append, StringBuilder::append).toString();
+		Assert.assertEquals(str, chars);
+	}
+
+	@Test
+	public void testSpans() {
+		Style italic = new Style().textItalic(1).immutable();
+		Style bold = new Style().textWeight(1).immutable();
+		Style under = new Style().textUnderline(1).immutable();
+
+		StyledText st = new StyledText("Styling some text is lots of effort.");
+		st.root().applyStyle(italic, "i", 8, 28);
+		st.root().applyStyle(bold, "b", 13, 17);
+		st.root().applyStyle(under, "u", 26, 28);
+
+		for (Span span : st.spans()) {
+			System.out.println(span.text());
+		}
+	}
+
+	@Test
+	public void testAppendSpan() {
+		Style boldStyle = new Style().textWeight(1).immutable();
+		StyledText text = new StyledText();
+		text.appendStyledText(boldStyle, "Display Brightness");
+		text.appendText("Yeah!");
+	}
+}
