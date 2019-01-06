@@ -52,8 +52,39 @@
   </dependencies>
 
   <modules>
+    <module>anim</module>
+    <module>app</module>
+    <module>awtd</module>
+    <module>bundle</module>
     <module>color</module>
+    <module>config</module>
+    <module>control</module>
+    <module>core</module>
+    <module>data</module>
+    <module>device</module>
+    <module>display</module>
+    <module>framework</module>
+    <module>graphdb</module>
+    <module>http</module>
+    <module>item</module>
+    <module>layout</module>
+    <module>linux</module>
     <module>logging</module>
+    <module>micro</module>
+    <module>model</module>
+    <module>scripting</module>
+    <module>studio</module>
+    <module>util</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>pi</id>
+        <modules>
+          <module>adafruit</module>
+          <module>pimoroni</module>
+        </modules>
+    </profile>
+  </profiles>
 
 </project>
