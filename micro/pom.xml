@@ -1,0 +1,98 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>gosper-micro</artifactId>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.superdashi.gosper</groupId>
+    <artifactId>gosper</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <name>Gosper Micro</name>
+  <description>Micro application framework</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-bundle</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-config</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-device</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-item</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-framework</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-layout</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-logging</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-scripting</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-studio</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.tries</groupId>
+      <artifactId>tries</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tomgibara.radix4</groupId>
+      <artifactId>radix4</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    <!-- TODO cut this -->
+    <dependency>
+      <groupId>com.univocity</groupId>
+      <artifactId>univocity-parsers</artifactId>
+      <version>2.6.2</version>
+      <type>jar</type>
+    </dependency>
+
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-core</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-data</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.superdashi.gosper</groupId>
+      <artifactId>gosper-display</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+
+  </dependencies>
+
+</project>

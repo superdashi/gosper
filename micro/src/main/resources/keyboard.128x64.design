@@ -1,0 +1,33 @@
+# states
+mjl maj min sym sml
+
+on_char maj min
+on_char sym min
+
+state_op shift maj->mjl mjl->min maj
+state_op symbol sym->sml sml->min sym
+
+backdrop mjl keyboard_majuscule.128x64.png
+backdrop maj keyboard_majuscule.128x64.png
+backdrop min keyboard_minuscule.128x64.png
+backdrop sym keyboard_symbol.128x64.png
+backdrop sml keyboard_symbol.128x64.png
+backdrops_opaque false
+
+initial_state maj
+
+key_row  3,11,7,8 1 10,0 * 111!!222``333##444$$555%%666^^777&&888**999((000))
+key_row  5,22,9,8 1 12,0 * QQq  WWw  EEe||RRr\\TTt//YYy{{UUu}}IIi++OOo--PPp==
+key_row  9,33,9,8 1 12,0 * AAa  SSs  DDd~~FFf??GGg[[HHh]]JJj__KKk''LLl""
+key_row 13,44,9,8 1 12,0 * ZZz  XXx  CCc<<VVv>>BBb::NNn;;MMm,,.....@@@@@
+
+key 111,1,14,7  1,1,0,1 *:23
+key 103,11,22,8 1 *:8
+key 41,55,45,8  1,1,1,0 *:32
+key 15,55,23,8  1,1,1,0 *:shift
+key 89,55,23,8  1,1,1,0 *:symbol
+
+text_area 0,0,110,9
+
+# 71=G 103=g 91=[
+initial_keys 71,71,103,91,91
