@@ -37,6 +37,7 @@ import com.superdashi.gosper.framework.Namespace;
 import com.superdashi.gosper.graphdb.AttrName;
 import com.superdashi.gosper.graphdb.Edit;
 import com.superdashi.gosper.graphdb.Inspect;
+import com.superdashi.gosper.graphdb.Inventory;
 import com.superdashi.gosper.graphdb.Space;
 import com.superdashi.gosper.graphdb.Store;
 import com.superdashi.gosper.graphdb.Type;
@@ -109,6 +110,10 @@ public final class DataTier {
 	public Optional<DataContext> dataContext(Identity identity) {
 		if (identity == null) throw new IllegalArgumentException("null identity");
 		return Optional.ofNullable( contexts.get(identity) );
+	}
+
+	public Inventory inventory() {
+		return activeSpace().inventory();
 	}
 
 	//TODO need method to access space

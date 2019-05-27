@@ -32,6 +32,7 @@ public abstract class Visit implements AutoCloseable {
 	private final Maps<Integer, Edge> edgeMaps = Collect.setsOf(int.class).mappedTo(Edge.class);
 
 	final Space space;
+	final Inventory inventory;
 	//TODO split view so that we don't depend on all of it?
 	final View view; // a view that may limit visibility of the parts
 	final Indices indices; // taken from space, depending on mutability
@@ -74,14 +75,15 @@ public abstract class Visit implements AutoCloseable {
 		types = space.types;
 		defaults = space.defaults;
 		indexTypes = space.indexTypes; //TODO should build on view since can be restricted to the accessible attrs
-		codesById = space.identityNameLookup.getByObj();
-		idsByCode = space.identityNameLookup.getByCode();
-		codesByNs = space.namespaceLookup.getByObj();
-		nssByCode = space.namespaceLookup.getByCode();
-		codesByType = space.typeNameLookup.getByObj();
-		typesByCode = space.typeNameLookup.getByCode();
-		codesByAttr = space.attrNameLookup.getByObj();
-		attrsByCode = space.attrNameLookup.getByCode();
+		inventory = space.inventory;
+		codesById = inventory.identityNameLookup.getByObj();
+		idsByCode = inventory.identityNameLookup.getByCode();
+		codesByNs = inventory.namespaceLookup.getByObj();
+		nssByCode = inventory.namespaceLookup.getByCode();
+		codesByType = inventory.typeNameLookup.getByObj();
+		typesByCode = inventory.typeNameLookup.getByCode();
+		codesByAttr = inventory.attrNameLookup.getByObj();
+		attrsByCode = inventory.attrNameLookup.getByCode();
 	}
 
 	public long version() {
@@ -215,12 +217,12 @@ public abstract class Visit implements AutoCloseable {
 		int nsc = Name.nsCode(tagId);
 		int nmc = Name.nmCode(tagId);
 		//TODO should maintain a cache
-		return new Tag(nssByCode.get(nsc), space.tagForCode(nmc));
+		return new Tag(nssByCode.get(nsc), inventory.tagForCode(nmc));
 	}
 
 	long idForTag(Tag tag) {
 		int nsc = codesByNs.get(tag.namespace);
-		int nmc = space.codeForTag(tag.name);
+		int nmc = inventory.codeForTag(tag.name);
 		//TODO should cache
 		return Name.nsnId(nsc, nmc);
 	}

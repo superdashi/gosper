@@ -131,7 +131,7 @@ public class MicroLauncher {
 				// launch chooser in the absence of devices
 				AWTDevice device = AWTDeviceChooser.choose(new TestWifi(new Random()));
 				if (device == null) System.exit(0);
-				interfaces.addInterface("chosen", device, configuration::dataContext);
+				interfaces.addInterface("chosen", device, tiers.dataTier);
 			}
 		}
 

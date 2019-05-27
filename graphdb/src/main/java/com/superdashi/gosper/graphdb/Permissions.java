@@ -50,7 +50,7 @@ public final class Permissions {
 		this.part = part;
 		accessible = part.accessibleByViewer();
 		int[] perms = part.data.perms;
-		Lookup<String> lookup = part.visit.space.permissionLookup;
+		Lookup<String> lookup = part.visit.space.inventory.permissionLookup;
 		if (perms.length == 0) {
 			/* nothing to do, there are no permissions */
 			view = new HashSet<>();

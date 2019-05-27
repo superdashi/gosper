@@ -25,6 +25,7 @@ import java.util.function.Function;
 import com.tomgibara.collect.Collect;
 import com.tomgibara.collect.Collect.Maps;
 import com.superdashi.gosper.data.DataContext;
+import com.superdashi.gosper.data.DataTier;
 import com.superdashi.gosper.device.Device;
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.logging.Logger;
@@ -72,15 +73,15 @@ public final class Interfaces {
 		}
 	}
 
-	// dataContexts is optional
-	public Interface addInterface(String identifier, Device device, Function<Identity, DataContext> dbConnector) {
+	// dataTier is optional
+	public Interface addInterface(String identifier, Device device, DataTier dataTier) {
 		if (identifier == null) throw new IllegalArgumentException("null identifier");
 		if (device == null) throw new IllegalArgumentException("null device");
 		synchronized (lock) {
 			if (interfaces.containsKey(identifier)) throw new IllegalArgumentException("interface already added with identifier " + identifier);
 			//TODO need to build appropriate studio for device?
 			Studio studio = new StudioPlan().createLocalStudio();
-			Interface face = new Interface(runtime, identifier, device, dbConnector, studio);
+			Interface face = new Interface(runtime, identifier, device, dataTier, studio);
 			interfaces.put(identifier, face);
 			if (runtime.started()) {
 				try {

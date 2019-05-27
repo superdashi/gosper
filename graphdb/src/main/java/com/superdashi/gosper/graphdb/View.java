@@ -54,7 +54,7 @@ public final class View implements Editor {
 		this.namespace = viewer.namespace;
 		this.selector = viewer.permSelector;
 
-		identityId = space.identityId(identity);
+		identityId = space.inventory.identityId(identity);
 		availableTypes = space.availableTypes(namespace);
 		declaredPermissions = viewer.declaredPermissionNames;
 		grantedPermissions = viewer.grantedPermissions;

@@ -19,16 +19,14 @@ package com.superdashi.gosper.micro;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Function;
 
 import com.superdashi.gosper.bundle.AppRole;
 import com.superdashi.gosper.bundle.Bundle;
 import com.superdashi.gosper.bundle.BundleCollation;
-import com.superdashi.gosper.data.DataContext;
+import com.superdashi.gosper.data.DataTier;
 import com.superdashi.gosper.device.Device;
 import com.superdashi.gosper.device.DeviceSpec;
 import com.superdashi.gosper.device.Screen;
-import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.item.Flavor;
 import com.superdashi.gosper.item.Qualifier;
 import com.superdashi.gosper.logging.Logger;
@@ -46,7 +44,7 @@ public final class Interface {
 	public final String identifier;
 	private final AppInstalls appInstalls;
 	final Device device;
-	final Function<Identity, DataContext> dbConnector; // optional
+	final DataTier dataTier; // optional
 	final Studio studio;
 	final SurfacePool surfacePool;
 	final Logger logger;
@@ -63,12 +61,12 @@ public final class Interface {
 
 	// constructors
 
-	Interface(Runtime runtime, String identifier, Device device, Function<Identity, DataContext> dbConnector, Studio studio) {
+	Interface(Runtime runtime, String identifier, Device device, DataTier dataTier, Studio studio) {
 		this.runtime = runtime;
 		appInstalls = runtime.appInstalls;
 		this.identifier = identifier;
 		this.device = device;
-		this.dbConnector = dbConnector;
+		this.dataTier = dataTier;
 		this.studio = studio;
 		surfacePool = studio.createSurfacePool();
 		logger = runtime.logger.descendant("interfaces", identifier);

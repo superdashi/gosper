@@ -22,20 +22,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import org.h2.mvstore.MVMap;
-import org.h2.mvstore.MVMap.Builder;
 import org.h2.mvstore.MVStore;
 
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
 import com.superdashi.gosper.item.Value;
-import com.tomgibara.fundament.Bijection;
 
 public final class Space {
 
@@ -54,19 +51,7 @@ public final class Space {
 	static final int NO_OWNER = -1;
 
 	//TODO replace
-	static final String MAP_NAME_META          = "meta"       ;
-	static final String MAP_NAME_TYPES_BY_CODE = "typesByCode";
-	static final String MAP_NAME_CODES_BY_TYPE = "codesByType";
-	static final String MAP_NAME_TAGS_BY_CODE  = "tagsByCode" ;
-	static final String MAP_NAME_CODES_BY_TAG  = "codesByTag" ;
-	static final String MAP_NAME_ATTRS_BY_CODE = "attrsByCode";
-	static final String MAP_NAME_CODES_BY_ATTR = "codesByAttr";
-	static final String MAP_NAME_PERMS_BY_CODE = "permsByCode";
-	static final String MAP_NAME_CODES_BY_PERM = "codesByPerm";
-	static final String MAP_NAME_NSS_BY_CODE   = "nssByCode"  ;
-	static final String MAP_NAME_CODES_BY_NS   = "codesByNs"  ;
-	static final String MAP_NAME_IDS_BY_CODE   = "idsByCode"  ;
-	static final String MAP_NAME_CODES_BY_ID   = "codesById"  ;
+	static final String MAP_NAME_META = "meta"       ;
 
 	static final String NEXT_NODE_ID = "next_node_id";
 	static final String NEXT_EDGE_ID = "next_edge_id";
@@ -97,17 +82,9 @@ public final class Space {
 	final MVStore store; // expose for convenience of testing
 	private final MVMap<String, Object> meta;
 
-	final Lookup<Namespace> namespaceLookup;
-	final Lookup<String> identityNameLookup;
-	final Lookup<String> typeNameLookup;
-	final Lookup<String> attrNameLookup;
-	//TODO could merge with identityNameLookup
-	final Lookup<String> permissionLookup;
+	final Inventory inventory;
 	final Map<Identity, Identity> canonIdentities = new HashMap<>();
 	private final Map<Namespace, Set<Type>> availableTypes = new HashMap<>();
-
-	private final MVMap<Integer, String> tagsByCode;
-	private final MVMap<String, Integer> codesByTag;
 
 	private final Indices indices;
 	private Indices readOnlyIndices;
@@ -126,9 +103,6 @@ public final class Space {
 	private boolean open = false;
 	private boolean closed = false;
 
-	//TOOD probably needs proper random
-	private final Random rand = new Random();
-
 	volatile Observer observer = new Observer();
 
 	public Space(Store storage) {
@@ -136,23 +110,7 @@ public final class Space {
 		this.store = storage.store;
 		store.setAutoCommitDelay(0);
 		meta = store.openMap(MAP_NAME_META);
-		{
-			Builder<Integer, String> builder = new MVMap.Builder<>();
-			builder.keyType(IntType.instance);
-			tagsByCode = store.openMap(MAP_NAME_TAGS_BY_CODE, builder);
-		}
-		{
-			Builder<String, Integer> builder = new MVMap.Builder<>();
-			builder.valueType(IntType.instance);
-			codesByTag = store.openMap(MAP_NAME_CODES_BY_TAG, builder);
-		}
-
-		namespaceLookup = new Lookup<>(store, MAP_NAME_NSS_BY_CODE, MAP_NAME_CODES_BY_NS, Bijection.fromFunctions(String.class, Namespace.class, Namespace::new, Namespace::toString), () -> rand.nextInt() & 0x7ffffffe);
-		identityNameLookup = new Lookup<>(store, MAP_NAME_IDS_BY_CODE, MAP_NAME_CODES_BY_ID, Bijection.identity(String.class), Lookup.positiveRandom(rand));
-		typeNameLookup = new Lookup<>(store, MAP_NAME_TYPES_BY_CODE, MAP_NAME_CODES_BY_TYPE, Bijection.identity(String.class), Lookup.positiveRandom(rand));
-		attrNameLookup = new Lookup<>(store, MAP_NAME_ATTRS_BY_CODE, MAP_NAME_CODES_BY_ATTR, Bijection.identity(String.class), () -> rand.nextInt() & 0x7ffffffe | 0x00000001);
-		permissionLookup = new Lookup<>(store, MAP_NAME_PERMS_BY_CODE, MAP_NAME_CODES_BY_PERM, Bijection.identity(String.class), Lookup.positiveRandom(rand));
-
+		inventory = new Inventory(store);
 		indices = new Indices(this);
 		readOnlyIndices = indices.snapshot();
 
@@ -200,11 +158,11 @@ public final class Space {
 				}
 			}
 			viewers.put(identity, viewer);
-			identityNameLookup.record(identity.name);
+			inventory.identityNameLookup.record(identity.name);
 			Namespace namespace = viewer.namespace;
-			namespaceLookup.record(namespace);
+			inventory.namespaceLookup.record(namespace);
 			for (String typeName : viewer.typeNames) {
-				typeNameLookup.record(typeName);
+				inventory.typeNameLookup.record(typeName);
 			};
 			for (Attribute a : viewer.typedAttrs.values()) {
 				AttrName name = a.name;
@@ -214,7 +172,7 @@ public final class Space {
 				}
 				Value.Type type = types.get(name);
 				if (type != null) continue; // if type is not null, we know it's the same because that is prechecked
-				attrNameLookup.record(name.name);
+				inventory.attrNameLookup.record(name.name);
 				types.put(name, a.type);
 			}
 			for (Entry<AttrName, Value> entry : defaultedAttrs.entrySet()) {
@@ -224,7 +182,7 @@ public final class Space {
 				}
 			}
 			viewer.declaredPermissionNames.forEach(p -> {
-				permissionLookup.record(p);
+				inventory.permissionLookup.record(p);
 				Identity perm = new Identity(namespace, p);
 				canonIdentities.putIfAbsent(perm, perm);
 			});
@@ -234,6 +192,10 @@ public final class Space {
 				spaceLock.writeLock().unlock();
 			}
 		}
+	}
+
+	public Inventory inventory() {
+		return inventory;
 	}
 
 	public void open() {
@@ -308,25 +270,6 @@ public final class Space {
 		}
 	}
 
-	// creates if necessary
-	int codeForTag(String tagName) {
-		int code = codesByTag.getOrDefault(tagName, -1);
-		if (code < 0) {
-			do {
-				code = rand.nextInt() & 0x7fffffff;
-			} while (tagsByCode.containsKey(code));
-			codesByTag.put(tagName, code);
-			tagsByCode.put(code, tagName);
-		}
-		return code;
-	}
-
-	String tagForCode(int code) {
-		String tagName = tagsByCode.get(code);
-		if (tagName == null) throw new IllegalArgumentException("no tag name for code: " + code);
-		return tagName;
-	}
-
 	Set<Type> availableTypes(Namespace namespace) {
 		return availableTypes.get(namespace);
 	}
@@ -394,34 +337,9 @@ public final class Space {
 		spaceLock.readLock().unlock();
 	}
 
-	long identityId(Identity identity) {
-		int nsc = namespaceLookup.getByObj().getOrDefault(identity.ns, -1);
-		int nmc = identityNameLookup.getByObj().getOrDefault(identity.name, -1);
-		return nsc < 0 || nmc < 0 ? -1L : Name.nsnId(nsc, nmc);
-	}
-
-	long typeId(Type type) {
-		int nsc = namespaceLookup.getByObj().getOrDefault(type.namespace, -1);
-		int nmc = typeNameLookup.getByObj().getOrDefault(type.name, -1);
-		return nsc < 0 || nmc < 0 ? -1L : Name.nsnId(nsc, nmc);
-	}
-
-	long permId(Identity perm) {
-		int nsc = namespaceLookup.getByObj().getOrDefault(perm.ns, -1);
-		int nmc = permissionLookup.getByObj().getOrDefault(perm.name, -1);
-		return nsc < 0 || nmc < 0 ? -1L : Name.nsnId(nsc, nmc);
-	}
-
-	long tagId(Tag tag) {
-		int nsc = namespaceLookup.getByObj().getOrDefault(tag.namespace, -1);
-		int nmc = codesByTag.getOrDefault(tag.name, -1);
-		return nsc < 0 || nmc < 0 ? -1L : Name.nsnId(nsc, nmc);
-	}
-
 	private void activate() {
 		// process lookups & indices
-		boolean modified =
-				namespaceLookup.lock() | identityNameLookup.lock() | typeNameLookup.lock() | attrNameLookup.lock() | permissionLookup.lock() | indices.update();
+		boolean modified = inventory.lock() | indices.update();
 
 		// compute the available types
 		viewers.keySet().stream().map(i -> i.ns).distinct().forEach(
@@ -436,11 +354,7 @@ public final class Space {
 	}
 
 	private void deactivate() {
-		namespaceLookup.unlock();
-		identityNameLookup.unlock();
-		typeNameLookup.unlock();
-		attrNameLookup.unlock();
-		permissionLookup.unlock();
+		inventory.unlock();
 	}
 
 }

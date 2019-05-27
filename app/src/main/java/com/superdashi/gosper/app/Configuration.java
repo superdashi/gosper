@@ -30,8 +30,6 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.concurrent.TimeUnit;
 
-import com.superdashi.gosper.data.DataContext;
-import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.logging.LogDomain;
 import com.superdashi.gosper.logging.LogPolicyFile;
 import com.superdashi.gosper.logging.LogRecorder;
@@ -145,7 +143,7 @@ final class Configuration {
 		MicroTier microTier = tiers.microTier;
 		if (microTier != null) {
 			installedApps.adjustApps(microTier.appInstalls(), tiers.dataTier);
-			devices.addInterfaces(microTier.interfaces(), this::dataContext);
+			devices.addInterfaces(microTier.interfaces(), tiers.dataTier);
 		}
 
 		// start the watching, or fallback to polling
@@ -182,10 +180,6 @@ final class Configuration {
 		if (coreConfig != null) {
 			coreConfig.backgroundExecutor().shutdown();
 		}
-	}
-
-	DataContext dataContext(Identity identity) {
-		return tiers.dataTier == null ? null : tiers.dataTier.dataContext(identity).orElse(null);
 	}
 
 	private void poll() {

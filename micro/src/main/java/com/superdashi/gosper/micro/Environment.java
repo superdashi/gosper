@@ -31,11 +31,13 @@ import com.superdashi.gosper.bundle.BundleFile;
 import com.superdashi.gosper.bundle.PrivilegeException;
 import com.superdashi.gosper.bundle.Privileges;
 import com.superdashi.gosper.data.DataContext;
+import com.superdashi.gosper.data.DataTier;
 import com.superdashi.gosper.device.Device;
 import com.superdashi.gosper.device.Screen;
 import com.superdashi.gosper.device.network.Wifi;
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
+import com.superdashi.gosper.graphdb.Inventory;
 import com.superdashi.gosper.logging.Logger;
 import com.superdashi.gosper.util.Time;
 import com.tomgibara.fundament.Producer;
@@ -68,7 +70,7 @@ public final class Environment {
 
 	// caches clock ticked by minutes
 	private Clock minuteClock = null;
-	private DataContext dataContext = null;
+	private Optional<DataContext> dataContext = null;
 
 	Environment(Interface face, AppInstance appInstance) {
 		this.face = face;
@@ -192,13 +194,17 @@ public final class Environment {
 		return micro;
 	}
 
+	public Optional<Inventory> dataInventory() {
+		appInstance.privileges.check(Privileges.ACCESS_DB_INVENTORY);
+		return Optional.ofNullable(face.dataTier).map(DataTier::inventory);
+	}
+
 	public Optional<DataContext> dataContext() {
-		appInstance.privileges.check(Privileges.OPEN_DB_CONNECTION);
-		if (face.dbConnector == null) return Optional.empty();
 		if (dataContext == null) {
-			dataContext = face.dbConnector.apply(appInstance.identity);
+			appInstance.privileges.check(Privileges.OPEN_DB_CONNECTION);
+			dataContext = face.dataTier == null ? Optional.empty() : face.dataTier.dataContext(appInstance.identity);
 		}
-		return Optional.of(dataContext);
+		return dataContext;
 	}
 
 	//TODO move onto a ScreenControl class?

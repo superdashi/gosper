@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,13 +34,12 @@ import com.superdashi.gosper.adafruit.Adafruit3531;
 import com.superdashi.gosper.awtd.AWTDevice;
 import com.superdashi.gosper.awtd.AWTScreen;
 import com.superdashi.gosper.config.Config;
-import com.superdashi.gosper.data.DataContext;
+import com.superdashi.gosper.data.DataTier;
 import com.superdashi.gosper.device.Device;
 import com.superdashi.gosper.device.Event;
 import com.superdashi.gosper.device.KeySet;
 import com.superdashi.gosper.device.Screen;
 import com.superdashi.gosper.device.network.Wifi;
-import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.item.ScreenClass;
 import com.superdashi.gosper.item.ScreenColor;
 import com.superdashi.gosper.linux.WPASupplicantWifi;
@@ -107,8 +105,8 @@ class Devices {
 		scanForDevices();
 	}
 
-	void addInterfaces(Interfaces interfaces, Function<Identity, DataContext> dbConnector) {
-		devices.forEach((i,d) -> interfaces.addInterface(i, d, dbConnector));
+	void addInterfaces(Interfaces interfaces, DataTier dataTier) {
+		devices.forEach((i,d) -> interfaces.addInterface(i, d, dataTier));
 	}
 
 	private void scanForDevices() {

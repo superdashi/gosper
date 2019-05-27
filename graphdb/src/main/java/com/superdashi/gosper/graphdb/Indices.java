@@ -58,6 +58,7 @@ final class Indices {
 	final boolean snapshot;
 	final long version;
 	private final Space space;
+	private final Inventory inventory; // cached for efficient access
 
 	final MVMap<Integer, PartData> nodesById;
 	final PartIndices nodeIndices;
@@ -74,6 +75,7 @@ final class Indices {
 	Indices(Space space) {
 		snapshot = false;
 		this.space = space;
+		this.inventory = space.inventory;
 		MVStore store = space.store;
 		version = store.getCurrentVersion();
 		{
@@ -113,8 +115,9 @@ final class Indices {
 
 	private Indices(Indices that, long version) {
 		snapshot = true;
+		space = that.space;
+		inventory = that.inventory;
 		this.version = version;
-		this.space = that.space;
 
 		nodesById = that.nodesById.openVersion(version);
 		nodeIndices = that.nodeIndices.version(version);
@@ -141,11 +144,11 @@ final class Indices {
 		// records whether modified
 		//TODO use something better than atomic boolean?
 		final AtomicBoolean modified = new AtomicBoolean();
-		final MVStore store = space.store;
+		final MVStore store = inventory.store;
 
 		Set<AttrName> newIndices = space.newIndices;
-		Lookup<Namespace> namespaceLookup = space.namespaceLookup;
-		Lookup<String> attrNameLookup = space.attrNameLookup;
+		Lookup<Namespace> namespaceLookup = inventory.namespaceLookup;
+		Lookup<String> attrNameLookup = inventory.attrNameLookup;
 		Map<AttrName, Value.Type> indexTypes = space.indexTypes;
 
 		// remove unmatched indices
@@ -217,7 +220,7 @@ final class Indices {
 	}
 
 	Indices snapshot() {
-		return new Indices(this, space.store.getCurrentVersion());
+		return new Indices(this, inventory.store.getCurrentVersion());
 	}
 
 	// basic part methods
@@ -284,7 +287,7 @@ final class Indices {
 
 	NodeSequence nodesWithOwner(Resolver resolver, Identity owner) {
 		return () -> {
-			long identityId = space.identityId(owner);
+			long identityId = inventory.identityId(owner);
 			if (identityId < 0L) return NodeSequence.emptyIterator; // identity not known, so can't own anything
 			return nodeIndices.nodeIteratorOverOwner(identityId);
 		};
@@ -292,7 +295,7 @@ final class Indices {
 
 	NodeSequence nodesWithType(Resolver resolver, Type type) {
 		return () -> {
-			long typeId = space.typeId(type);
+			long typeId = inventory.typeId(type);
 			if (typeId < 0L) return NodeSequence.emptyIterator; // type or NS not known to db, so there can't be a node
 			resolver.visit.flush(); // using index, needs flush
 			return nodeIndices.nodeIteratorOverType(typeId);
@@ -301,7 +304,7 @@ final class Indices {
 
 	NodeSequence nodesWithPermission(Resolver resolver, Identity permission) {
 		return () -> {
-			long permId = space.permId(permission);
+			long permId = inventory.permId(permission);
 			if (permId < 0L) return NodeSequence.emptyIterator; // permission or NS not known to db, so there can't be a node
 			resolver.visit.flush(); // using index, needs flush
 			return nodeIndices.nodeIteratorOverPerm(permId);
@@ -311,7 +314,7 @@ final class Indices {
 	NodeSequence nodesWithTag(Resolver resolver, Tag tag) {
 		return () -> {
 			resolver.visit.flush(); // using index, needs flush - we have to flush before looking for tag id, otherwise it may not have been added
-			long tagId = space.tagId(tag);
+			long tagId = inventory.tagId(tag);
 			if (tagId < 0L) return NodeSequence.emptyIterator; // tag is unknown, so can't exist in graph
 			return nodeIndices.nodeIteratorOverTag(tagId);
 		};
@@ -363,10 +366,10 @@ final class Indices {
 	private NodeSequence nodesWithValueViaScan(Resolver resolver, AttrName attrName, Value value) {
 		if (Space.FAIL_ON_SCAN) throw new AssertionError("scan");
 		return () -> {
-			int nsc = space.namespaceLookup.getByObj().getOrDefault(attrName.namespace, -1);
+			int nsc = inventory.namespaceLookup.getByObj().getOrDefault(attrName.namespace, -1);
 			if (nsc == -1) return NodeSequence.emptyIterator;
 			String nm = attrName.name;
-			int nmc = space.attrNameLookup.getByObj().getOrDefault(nm, -1);
+			int nmc = inventory.attrNameLookup.getByObj().getOrDefault(nm, -1);
 			resolver.visit.flush(); // using index, needs flush
 			Value.Type type = space.types.get(attrName);
 			return nodesById.entrySet().stream().mapToInt(e -> {
@@ -458,7 +461,7 @@ final class Indices {
 
 	EdgeSequence edgesWithOwner(Resolver resolver, Identity owner) {
 		return () -> {
-			long identityId = space.identityId(owner);
+			long identityId = inventory.identityId(owner);
 			if (identityId < 0L) return EdgeSequence.emptyIterator; // identity not known, so can't own anything
 			return edgeIndices.edgeIteratorOverOwner(identityId);
 		};
@@ -466,7 +469,7 @@ final class Indices {
 
 	EdgeSequence edgesWithType(Resolver resolver, Type type) {
 		return () -> {
-			long typeId = space.typeId(type);
+			long typeId = inventory.typeId(type);
 			if (typeId < 0) return EdgeSequence.emptyIterator; // type or NS not known to db, so there can't be a node
 			resolver.visit.flush(); // using index, needs flush
 			return edgeIndices.edgeIteratorOverType(typeId);
@@ -475,7 +478,7 @@ final class Indices {
 
 	EdgeSequence edgesWithPermission(Resolver resolver, Identity permission) {
 		return () -> {
-			long permId = space.permId(permission);
+			long permId = inventory.permId(permission);
 			if (permId < 0L) return EdgeSequence.emptyIterator; // permission or NS not known to db, so there can't be a node
 			resolver.visit.flush(); // using index, needs flush
 			return edgeIndices.edgeIteratorOverPerm(permId);
@@ -485,7 +488,7 @@ final class Indices {
 	EdgeSequence edgesWithTag(Resolver resolver, Tag tag) {
 		return () -> {
 			resolver.visit.flush(); // using index, needs flush - we have to flush before looking for tag id, otherwise it may not have been added
-			long tagId = space.tagId(tag);
+			long tagId = inventory.tagId(tag);
 			if (tagId < 0L) return EdgeSequence.emptyIterator; // tag is unknown, so can't exist in graph
 			return edgeIndices.edgeIteratorOverTag(tagId);
 		};
@@ -537,10 +540,10 @@ final class Indices {
 	private EdgeSequence edgesWithValueViaScan(Resolver resolver, AttrName attrName, Value value) {
 		if (Space.FAIL_ON_SCAN) throw new AssertionError("scan");
 		return () -> {
-			int nsc = space.namespaceLookup.getByObj().getOrDefault(attrName.namespace, -1);
+			int nsc = inventory.namespaceLookup.getByObj().getOrDefault(attrName.namespace, -1);
 			if (nsc == -1) return EdgeSequence.emptyIterator;
 			String nm = attrName.name;
-			int nmc = space.attrNameLookup.getByObj().getOrDefault(nm, -1);
+			int nmc = inventory.attrNameLookup.getByObj().getOrDefault(nm, -1);
 			resolver.visit.flush(); // using index, needs flush
 			Value.Type type = space.types.get(attrName);
 			return edgesBySource.entrySet().stream().mapToLong(e -> {
