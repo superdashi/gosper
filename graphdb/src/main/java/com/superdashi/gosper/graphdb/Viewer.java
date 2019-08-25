@@ -66,7 +66,7 @@ public final class Viewer {
 		private Set<String> typeNames = new HashSet<>();
 		private Map<String, Attribute> attributes = new HashMap<>();
 		private Set<String> declaredPermissionNames = new HashSet<>();
-		private SortedSet<Identity> grantedPermissions = new TreeSet<>(PERM_COMP);
+		private SortedSet<Identity> grantedPermissions = new TreeSet<>(PERM_COMP); // nullification indicates all permissions granted
 		private EquivalenceMap<Namespace, String> prefixesByNs = null;
 		private EquivalenceMap<String, Namespace> nsByPrefix = null;
 
@@ -104,10 +104,17 @@ public final class Viewer {
 			return this;
 		}
 
+		public Builder grantAllPermissions() {
+			grantedPermissions = null;
+			return this;
+		}
+
 		public Builder addGrantedPermission(Identity permission) {
 			if (permission == null) throw new IllegalArgumentException("null permission");
-			//TODO throw an IAE?
-			if (!permission.ns.equals(identity.ns)) grantedPermissions.add(permission);
+			if (grantedPermissions != null) {
+				//TODO throw an IAE?
+				if (!permission.ns.equals(identity.ns)) grantedPermissions.add(permission);
+			}
 			return this;
 		}
 
@@ -165,7 +172,7 @@ public final class Viewer {
 	public final Map<String, Attribute> indexedAttrs;
 	// the permissions that this viewer declares
 	public final Set<String> declaredPermissionNames;
-	// the permissions that this viewer has been granted
+	// the permissions that this viewer has been granted - empty if universal
 	public final Set<Identity> grantedPermissions;
 	// the granted permissions grouped by namespace for efficient comparison
 	final Map<Namespace, Set<String>> grantedByNs;
@@ -192,24 +199,29 @@ public final class Viewer {
 			if (defaulted) defaultedAttrs.put(name, attr);
 			if (indexed) indexedAttrs.put(name, attr);
 		}
-		Map<Namespace, Set<String>> grantedByNs = new HashMap<>();
-		builder.grantedPermissions.forEach(p -> {
-			Set<String> set = grantedByNs.get(p.ns);
-			if (set == null) {
-				set = Collections.singleton(p.name);
-				grantedByNs.put(p.ns, set);
-			} else if (set.size() == 1) {
-				set = new HashSet<>(set);
-				set.add(p.name);
-				grantedByNs.put(p.ns, set);
-			} else {
-				set.add(p.name);
+		Map<Namespace, Set<String>> grantedByNs;
+		if (builder.grantedPermissions == null) {
+			grantedByNs = null;
+		} else {
+			grantedByNs = new HashMap<>();
+			builder.grantedPermissions.forEach(p -> {
+				Set<String> set = grantedByNs.get(p.ns);
+				if (set == null) {
+					set = Collections.singleton(p.name);
+					grantedByNs.put(p.ns, set);
+				} else if (set.size() == 1) {
+					set = new HashSet<>(set);
+					set.add(p.name);
+					grantedByNs.put(p.ns, set);
+				} else {
+					set.add(p.name);
+				}
+			});
+			for (Entry<Namespace, Set<String>> entry : grantedByNs.entrySet()) {
+				Set<String> set = entry.getValue();
+				if (set.size() > 1) set = Collections.unmodifiableSet(set);
+				entry.setValue(set);
 			}
-		});
-		for (Entry<Namespace, Set<String>> entry : grantedByNs.entrySet()) {
-			Set<String> set = entry.getValue();
-			if (set.size() > 1) set = Collections.unmodifiableSet(set);
-			entry.setValue(set);
 		}
 
 		this.typeNames = Collections.unmodifiableList(typeNames);
@@ -217,14 +229,19 @@ public final class Viewer {
 		this.defaultedAttrs = Collections.unmodifiableMap(defaultedAttrs);
 		this.indexedAttrs = Collections.unmodifiableMap(indexedAttrs);
 		declaredPermissionNames = Collections.unmodifiableSet(new TreeSet<>(builder.declaredPermissionNames));
-		grantedPermissions = Collections.unmodifiableSet(new TreeSet<>(builder.grantedPermissions));
-		this.grantedByNs = Collections.unmodifiableMap(grantedByNs);
+		grantedPermissions = builder.grantedPermissions == null ? Collections.emptySortedSet() : Collections.unmodifiableSet(new TreeSet<>(builder.grantedPermissions));
+		this.grantedByNs = grantedByNs == null ? null : Collections.unmodifiableMap(grantedByNs);
 		prefixesByNs = builder.prefixesByNs == null ? emptyPrefixes : builder.prefixesByNs.immutableCopy();
 		nsByPrefix = builder.nsByPrefix == null ? emptyNs : builder.nsByPrefix.immutableCopy();
 
-		Selector permSelector = Selector.ownedBy(identity);
-		for (Identity permission: grantedPermissions) {
-			permSelector = permSelector.or(Selector.viewableWithPermission(permission));
+		Selector permSelector;
+		if (builder.grantedPermissions == null) {
+			permSelector = Selector.any();
+		} else {
+			permSelector = Selector.ownedBy(identity);
+			for (Identity permission: grantedPermissions) {
+				permSelector = permSelector.or(Selector.viewableWithPermission(permission));
+			}
 		}
 		this.permSelector = permSelector;
 	}

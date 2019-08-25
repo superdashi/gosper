@@ -223,6 +223,7 @@ public final class Permissions {
 	}
 
 	private boolean isPermittedIn(Set<String> required, View view) {
+		if (view.grantedByNs == null) return true;
 		Set<String> set = view.grantedByNs.get(part.owner().ns);
 		return set != null && !Collections.disjoint(required, set);
 	}

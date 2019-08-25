@@ -40,7 +40,7 @@ public final class View implements Editor {
 	final Set<Type> availableTypes;
 	final Set<String> declaredPermissions;
 	final Set<Identity> grantedPermissions;
-	final Map<Namespace, Set<String>> grantedByNs;
+	final Map<Namespace, Set<String>> grantedByNs; // null indicates universal access
 	final EquivalenceMap<Namespace, String> prefixesByNs;
 	final EquivalenceMap<String, Namespace> nsByPrefix;
 

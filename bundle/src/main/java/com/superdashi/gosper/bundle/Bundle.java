@@ -308,7 +308,11 @@ public final class Bundle {
 				}
 			});
 			prefixes.forEach((ns, p) -> builder.addPrefix(p, ns));
-			//TODO add declared/granted permissions
+			if (privileges.accessDbUniversally) {
+				builder.grantAllPermissions();
+			} else {
+				//TODO add declared/granted permissions
+			}
 			viewer = builder.build();
 		}
 	}

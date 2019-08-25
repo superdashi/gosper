@@ -49,6 +49,7 @@ public final class Privileges {
 			"RECONFIGURE_WIFI",
 			"ACCESS_DB_INVENTORY",
 			"OPEN_DB_CONNECTION",
+			"ACCESS_DB_UNIVERSALLY",
 			"START_SHUTDOWN",
 	};
 
@@ -73,9 +74,10 @@ public final class Privileges {
 	public static final int RECONFIGURE_WIFI        = 16;
 	public static final int ACCESS_DB_INVENTORY     = 17;
 	public static final int OPEN_DB_CONNECTION      = 18;
-	public static final int START_SHUTDOWN          = 19;
+	public static final int ACCESS_DB_UNIVERSALLY   = 19;
+	public static final int START_SHUTDOWN          = 20;
 
-	static final int COUNT = 20;
+	static final int COUNT = 21;
 
 	private static int[] basics = { KNOW_DEVICE_SPEC };
 
@@ -168,8 +170,9 @@ public final class Privileges {
 	public final boolean chooseWifiConnection;
 	public final boolean reconfigureWifi;
 
-	public final boolean accessDataSpace;
+	public final boolean accessDbInventory;
 	public final boolean openDbConnection;
+	public final boolean accessDbUniversally;
 
 	public final boolean startShutdown;
 
@@ -193,8 +196,9 @@ public final class Privileges {
 		removeWifiConnection  = flags.getBit(REMOVE_WIFI_CONNECTION );
 		chooseWifiConnection  = flags.getBit(CHOOSE_WIFI_CONNECTION );
 		reconfigureWifi       = flags.getBit(RECONFIGURE_WIFI       );
-		accessDataSpace       = flags.getBit(ACCESS_DB_INVENTORY    );
+		accessDbInventory     = flags.getBit(ACCESS_DB_INVENTORY    );
 		openDbConnection      = flags.getBit(OPEN_DB_CONNECTION     );
+		accessDbUniversally   = flags.getBit(ACCESS_DB_UNIVERSALLY  );
 		startShutdown         = flags.getBit(START_SHUTDOWN         );
 		this.flags = flags.immutable();
 	}
