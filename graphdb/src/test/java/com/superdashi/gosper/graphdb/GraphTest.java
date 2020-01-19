@@ -21,6 +21,7 @@ import static com.superdashi.gosper.graphdb.Selector.ownedBy;
 import static com.superdashi.gosper.graphdb.Selector.withAttr;
 import static com.superdashi.gosper.graphdb.Selector.withTag;
 import static com.superdashi.gosper.graphdb.Selector.withValue;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -41,27 +43,7 @@ import org.junit.Test;
 
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
-import com.superdashi.gosper.graphdb.ConstraintException;
-import com.superdashi.gosper.graphdb.Edge;
-import com.superdashi.gosper.graphdb.Edit;
-import com.superdashi.gosper.graphdb.Graph;
-import com.superdashi.gosper.graphdb.Inspect;
-import com.superdashi.gosper.graphdb.Node;
-import com.superdashi.gosper.graphdb.NodeCursor;
-import com.superdashi.gosper.graphdb.Observation;
-import com.superdashi.gosper.graphdb.Order;
-import com.superdashi.gosper.graphdb.PartRef;
-import com.superdashi.gosper.graphdb.Selector;
-import com.superdashi.gosper.graphdb.Space;
-import com.superdashi.gosper.graphdb.Store;
-import com.superdashi.gosper.graphdb.Tag;
-import com.superdashi.gosper.graphdb.Type;
-import com.superdashi.gosper.graphdb.View;
-import com.superdashi.gosper.graphdb.Viewer;
-import com.superdashi.gosper.graphdb.Visit;
 import com.superdashi.gosper.item.Value;
-import com.superdashi.gosper.item.ValueOrder;
-import com.tomgibara.bits.BitStore.Permutes;
 import com.tomgibara.storage.Stores;
 
 public class GraphTest {
@@ -101,9 +83,9 @@ public class GraphTest {
 	Type iebType = new Type(ns1, "is_employed_by");
 	Tag managerTag = new Tag(ns1, "manager");
 
-	Viewer stdApproach = stdBuild( Viewer.createBuilder(id1) ).addDeclaredPermissions("pv","pm","pd","pn").build();
-	Viewer stdApproach2 = stdBuild( Viewer.createBuilder(id2) ).addGrantedPermission(new Identity(ns1, "pv")).build();
-	Viewer stdApproach3 = stdBuild( Viewer.createBuilder(id3) ).addGrantedPermissions(new Identity(ns1, "pv"), new Identity(ns1, "pm"), new Identity(ns1, "pd")).build();
+	Viewer stdViewer1 = stdBuild( Viewer.createBuilder(id1) ).addDeclaredPermissions("pv","pm","pd","pn").build();
+	Viewer stdViewer2 = stdBuild( Viewer.createBuilder(id2) ).addGrantedPermission(new Identity(ns1, "pv")).build();
+	Viewer stdViewer3 = stdBuild( Viewer.createBuilder(id3) ).addGrantedPermissions(new Identity(ns1, "pv"), new Identity(ns1, "pm"), new Identity(ns1, "pd")).build();
 
 	static enum SType {
 		MEMORY,
@@ -161,7 +143,7 @@ public class GraphTest {
 				Assert.assertTrue(graph.nodes(withAttr("nothing")).toSet().isEmpty());
 			},
 			id1,
-			stdApproach
+				stdViewer1
 			);
 	}
 
@@ -183,7 +165,7 @@ public class GraphTest {
 				Assert.assertEquals(12, c2.attrs().integer("defaulted"));
 			},
 			id1,
-			stdApproach
+				stdViewer1
 			);
 	}
 
@@ -195,7 +177,7 @@ public class GraphTest {
 			visit -> {
 			},
 			id1,
-			stdApproach
+				stdViewer1
 			);
 	}
 
@@ -244,8 +226,106 @@ public class GraphTest {
 				Assert.assertTrue(graph.nodes(ownedBy(id1)).toSet().contains(cmp));
 			},
 			id1,
-			stdApproach
+				stdViewer1
 			);
+	}
+
+	@Test
+	public void testEmptyTypeCursor() throws IOException {
+		runTest(
+				visit -> {
+				},
+				visit -> {
+					Assert.assertFalse(visit.graph().types().iterator().hasNext());
+				},
+				id1,
+				stdViewer1
+				);
+	}
+
+	@Test
+	public void testSingleTypeCursor() throws IOException {
+		Function<Integer, Consumer<Edit>> builderProducer = n -> {
+			return edit -> {
+				for (int i = 0; i < n; i++) {
+					edit.createNode(cmpType);
+				}
+			};
+		};
+		Consumer<Inspect> verifier = visit -> {
+			TypeCursor cursor = visit.graph().types();
+			Assert.assertEquals(1, cursor.stream().count());
+			Assert.assertEquals(cmpType, cursor.stream().findFirst().get());
+		};
+		for (int i = 1; i < 10; i++) {
+			runTest(builderProducer.apply(i), verifier, id1, stdViewer1);
+		}
+	}
+
+	@Test
+	public void testDoubleTypeCursor() throws IOException {
+		Random r = new Random(0L);
+		Function<Integer, Consumer<Edit>> builderProducer = n -> {
+			return edit -> {
+				for (int i = 0; i < n; i++) {
+					edit.createNode(r.nextBoolean() ? cmpType : empType);
+				}
+			};
+		};
+		Consumer<Inspect> verifier = visit -> {
+			Set<Type> expected = visit.graph().nodes().stream().map(Part::type).collect(toSet());
+			Assert.assertEquals(expected.size(), visit.graph().types().stream().count());
+			Assert.assertEquals(expected, visit.graph().types().toSet());
+		};
+		for (int i = 1; i < 10; i++) {
+			runTest(builderProducer.apply(i), verifier, id1, stdViewer1);
+		}
+	}
+
+	@Test
+	public void testTypesInNamespace() {
+		Builder mvBuilder = builder(SType.OFF_HEAP);
+		{
+			View view = buildView(mvBuilder, id1, stdViewer1);
+			try (Edit edit = view.edit()) {
+				{
+					Node node = edit.createNode("Company");
+					node.attrs().string("name", "SomeCo");
+					node.permissions().allowViewWith("pv");
+				}
+				{
+					Node node = edit.createNode("Person");
+					node.attrs().string("name", "AnneOther");
+				}
+				edit.commit();
+			}
+		}
+
+		{
+			View view = buildView(mvBuilder, id2, stdViewer2);
+			try (Edit edit = view.edit()) {
+				Node node = edit.createNode("Employee");
+				node.attrs().string("name", "Anon");
+				edit.commit();
+			}
+
+			try (Inspect inspect = view.inspect()) {
+				Set<Type> types = inspect.graph().types().toSet();
+				Assert.assertEquals(2, types.size());
+				Assert.assertTrue(types.contains( new Type(ns1, "Company") ));
+				Assert.assertTrue(types.contains( new Type(ns2, "Employee") ));
+			}
+		}
+
+
+//		runTest(edit -> {
+//			edit.createNode("v1:Company");
+//			edit.createNode("v1:Employee");
+//			edit.createNode("v2:Person");
+//		}, inspect -> {
+//			Graph graph = inspect.graph();
+//			Assert.assertEquals(2, graph.typesWithNamespace(ns1).count());
+//		}, id1, stdViewer1);
 	}
 
 	@Test
@@ -279,7 +359,7 @@ public class GraphTest {
 				Assert.assertEquals(0, graph.nodes(withValue("v1:index", Value.ofInteger(55))).count());
 			},
 			id1,
-			stdApproach
+				stdViewer1
 			);
 	}
 
@@ -313,14 +393,14 @@ public class GraphTest {
 				}
 			},
 			id1,
-			stdApproach
+				stdViewer1
 			);
 	}
 
 	@Test
 	public void testPermissions() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view1 = buildView(mvBuilder, id1, stdApproach, stdApproach2);
+		View view1 = buildView(mvBuilder, id1, stdViewer1, stdViewer2);
 		try (Edit edit = view1.edit()) {
 			Node cmp = edit.createNode("Company");
 			cmp.permissions().allowViewWith("pv");
@@ -333,7 +413,7 @@ public class GraphTest {
 
 			edit.commit();
 		}
-		View view2 = buildView(mvBuilder, id2, stdApproach, stdApproach2);
+		View view2 = buildView(mvBuilder, id2, stdViewer1, stdViewer2);
 		try (Visit visit = view2.inspect()) {
 			Assert.assertEquals(1, visit.graph().nodes().count());
 			Assert.assertEquals(1, visit.graph().edges().count());
@@ -344,13 +424,14 @@ public class GraphTest {
 			expectISE(() -> node.attrs().integer("index", 1));
 			expectISE(() -> node.tags().add("nope"));
 			expectISE(() -> edge.delete());
+			Assert.assertEquals(Collections.singleton(node.type()), visit.graph().types().stream().collect(Collectors.toSet()));
 		}
 	}
 
 	@Test
 	public void testModifiable() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view1 = buildView(mvBuilder, id1, stdApproach, stdApproach2, stdApproach3);
+		View view1 = buildView(mvBuilder, id1, stdViewer1, stdViewer2, stdViewer3);
 		try (Edit edit = view1.edit()) {
 			Node cmp = edit.createNode("Company");
 			cmp.permissions().allowViewWith("pv");
@@ -363,7 +444,7 @@ public class GraphTest {
 			emp.tags().add("btag");
 			edit.commit();
 		}
-		View view2 = buildView(mvBuilder, id3, stdApproach, stdApproach2, stdApproach3);
+		View view2 = buildView(mvBuilder, id3, stdViewer1, stdViewer2, stdViewer3);
 		try (Visit visit = view2.edit()) {
 			Node cmp = visit.graph().nodes(ofType(cmpType)).unique();
 			Node emp = visit.graph().nodes(ofType(empType)).unique();
@@ -381,7 +462,7 @@ public class GraphTest {
 	@Test
 	public void testConcurrent() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 
 		try (Edit edit = view.edit()) {
 			Node cmp = edit.createNode("Company");
@@ -416,7 +497,7 @@ public class GraphTest {
 	@Test
 	public void testDeletability() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view1 = buildView(mvBuilder, id1, stdApproach, stdApproach2, stdApproach3);
+		View view1 = buildView(mvBuilder, id1, stdViewer1, stdViewer2, stdViewer3);
 		try (Edit edit = view1.edit()) {
 			Node cmp1 = edit.createNode("Company");
 			cmp1.permissions().allowViewWith("pv");
@@ -438,7 +519,7 @@ public class GraphTest {
 			edit.createEdge(emp, cmp2, wrkType);
 			edit.commit();
 		}
-		View view2 = buildView(mvBuilder, id3, stdApproach, stdApproach2, stdApproach3);
+		View view2 = buildView(mvBuilder, id3, stdViewer1, stdViewer2, stdViewer3);
 		try (Visit visit = view2.edit()) {
 			Node cmp1 = visit.graph().nodes(ofType(cmpType).and(withTag(new Tag(ns1, "atag")))).first().get();
 			cmp1.delete();
@@ -455,7 +536,7 @@ public class GraphTest {
 	@Test
 	public void testMutability() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 		{
 			Edit edit = view.edit();
 			Node cmp = edit.createNode("Company");
@@ -470,7 +551,7 @@ public class GraphTest {
 		}
 		view.space.close();
 		view.space.store.close();
-		view = buildView(mvBuilder, id1, stdApproach);
+		view = buildView(mvBuilder, id1, stdViewer1);
 		{
 			Inspect inspect = view.inspect();
 			Graph graph = inspect.graph();
@@ -488,13 +569,13 @@ public class GraphTest {
 	@Test
 	public void testLateApproach() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 		Space space = view.space;
 		try (Edit edit = space.view(id1).edit()) {
 			edit.createNode("Company");
 		}
 		expectIAE(() -> space.view(id2));
-		space.associate(stdApproach2);
+		space.associate(stdViewer2);
 		try (Edit edit = space.view(id2).edit()) {
 			edit.createNode("Company");
 		}
@@ -504,7 +585,7 @@ public class GraphTest {
 	@Test
 	public void testVersion() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 		final long v0;
 		try (Inspect inspect = view.inspect()) {
 			v0 = inspect.version();
@@ -566,7 +647,7 @@ public class GraphTest {
 					//graph.edges().unique();
 				},
 				id1,
-				stdApproach
+				stdViewer1
 				);
 	}
 
@@ -633,7 +714,7 @@ public class GraphTest {
 					Assert.assertEquals(3, graph.nodes(ofType("Person")).union(graph.nodes(withValue("index", Value.ofInteger(5)))).count());
 				},
 				id1,
-				stdApproach
+				stdViewer1
 				);
 	}
 
@@ -641,7 +722,7 @@ public class GraphTest {
 	@Test
 	public void testReentrantVisit() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 		try (Edit edit = view.edit()) {
 			expectCE(() -> view.edit());
 			Visit inspect = view.inspect();
@@ -654,7 +735,7 @@ public class GraphTest {
 	@Test
 	public void testBasicObservation() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 		List<PartRef> refs = new ArrayList<>();
 		Observation obs = view.observe(Selector.ofType(cmpType), refs::add);
 		try (Edit edit = view.edit()) {
@@ -673,7 +754,7 @@ public class GraphTest {
 	@Test
 	public void testEmptyCommit() {
 		Builder mvBuilder = builder(SType.FILE);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 		view.space.close();
 		String fileName = view.space.store.getFileStore().getFileName();
 		Assert.assertTrue(fileName.startsWith("nio:"));
@@ -732,7 +813,7 @@ public class GraphTest {
 					}
 				},
 				id1,
-				stdApproach
+				stdViewer1
 				);
 	}
 
@@ -742,7 +823,7 @@ public class GraphTest {
 		int empCount = 1000;
 		int edgeCount = 2000;
 		Builder mvBuilder = builder(SType.FILE);
-		View view = buildView(mvBuilder, id1, stdApproach);
+		View view = buildView(mvBuilder, id1, stdViewer1);
 		view.space.close();
 		String fileName = view.space.store.getFileStore().getFileName();
 		Assert.assertTrue(fileName.startsWith("nio:"));
@@ -808,23 +889,19 @@ public class GraphTest {
 		}
 	}
 
-	private void runTest(Config config, Consumer<Edit> builder, Consumer<Inspect> verifier, Identity identity, Viewer... approaches) {
+	private void runTest(Config config, Consumer<Edit> builder, Consumer<Inspect> verifier, Identity identity, Viewer... viewers) {
 		Builder mvBuilder = builder(config.sType);
-		View view = buildView(mvBuilder, identity, approaches);
+		View view = buildView(mvBuilder, identity, viewers);
 		Edit edit = view.edit();
 		int gid = System.identityHashCode(edit);
 //		System.out.println("BUILD STARTING");
 		builder.accept(edit);
 //		System.out.println("BUILD FINISHED");
-//		System.out.println("PREVERIFY STARTING");
-		//TODO elminate visit
-		//verifier.accept(edit);
-//		System.out.println("PREVERIFY FINISHED");
 		edit.commit();
 		if (!config.reuseStore) {
 			view.space.close();
 			view.space.store.close();
-			view = buildView(mvBuilder, identity, approaches);
+			view = buildView(mvBuilder, identity, viewers);
 		}
 		Inspect inspect = view.inspect();
 		Assert.assertNotEquals(gid, System.identityHashCode(inspect));
@@ -833,12 +910,12 @@ public class GraphTest {
 //		System.out.println("VERIFY FINISHED");
 	}
 
-	private View buildView(Builder mvBuilder, Identity identity, Viewer... approaches) {
+	private View buildView(Builder mvBuilder, Identity identity, Viewer... viewers) {
 		MVStore store = mvBuilder.open();
 		//MVStoreTool.dump(filename, true);
 		Space space = new Space(Store.wrap(store));
-		for (Viewer approach : approaches) {
-			space.associate(approach);
+		for (Viewer viewer : viewers) {
+			space.associate(viewer);
 		}
 		space.open();
 		return space.view(identity);

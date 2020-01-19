@@ -42,6 +42,7 @@ public abstract class Visit implements AutoCloseable {
 
 	//TODO use a better map
 	private final Map<Long, Identity> identitiesById = new HashMap<>(); // a fast lookup cache of identities by their id
+	private final Map<Long, Type> typesById = new HashMap<>(); // a fast lookup cache of identities by their id
 
 	//TODO make these weak
 	private final Map<Integer, Node> nodes = nodeMaps.newMap();
@@ -114,6 +115,7 @@ public abstract class Visit implements AutoCloseable {
 		return Optional.ofNullable(possibleEdge(edgeId, sourceId));
 	}
 
+	@Override
 	final public void close() {
 		if (!closed) {
 			closeOnly();
@@ -253,6 +255,18 @@ public abstract class Visit implements AutoCloseable {
 		return identity;
 	}
 
+	Type typeForId(long typeId) {
+		Type type = typesById.get(typeId);
+		if (type == null) {
+			int nsc = Name.nsCode(typeId);
+			int nmc = Name.nmCode(typeId);
+			Namespace ns = nssByCode.get(nsc);
+			String name = typesByCode.get(nmc);
+			type = Type.create(ns, name);
+			typesById.put(typeId, type);
+		}
+		return type;
+	}
 
 	void checkNotClosed() {
 		if (closed) throw new ConstraintException(ConstraintException.Type.VISIT_STATE, "visit closed");

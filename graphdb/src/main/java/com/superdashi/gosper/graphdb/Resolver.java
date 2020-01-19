@@ -70,17 +70,31 @@ final class Resolver {
 		return edgesRestricted ? seq.and(restriction.edgeSeq) : seq;
 	}
 
+	//TODO consider separate methods for node types and edge types
+	//TODO currently no efficient way to constrain types
+	TypeSequence restrictTypes(TypeSequence seq) {
+		if (!edgesRestricted && !nodesRestricted) return seq;
+		return () -> seq.stream().filter(tid ->
+			restrictNodes(() -> visit.indices.nodeIndices.nodeIteratorOverType(tid)).iterator().hasNext() ||
+			restrictEdges(() -> visit.indices.edgeIndices.edgeIteratorOverType(tid)).iterator().hasNext()
+		).iterator();
+	}
+
 	// no point observing here, node will not normally be request twice
 	Node resolveNode(int nodeId) {
 		return lastNodeId == nodeId ? visit.node(lastNodeId, lastNodeData, knownVisible) : visit.node(nodeId);
 	}
 
-	public Edge resolveEdge(long edgeId) {
+	Edge resolveEdge(long edgeId) {
 		if (lastEdgeId == edgeId) {
 			return lastEdge == null ? lastEdge = visit.edge(lastEdgeKey, lastEdgeData, knownVisible) : lastEdge;
 		} else {
 			return visit.edge(EdgeKey.edgeId(edgeId), EdgeKey.sourceId(edgeId), knownVisible);
 		}
+	}
+
+	Type resolveType(long typeId) {
+		return visit.typeForId(typeId);
 	}
 
 	void observeNode(int nodeId, PartData nodeData) {

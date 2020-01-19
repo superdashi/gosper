@@ -565,6 +565,22 @@ final class Indices {
 		};
 	}
 
+	// type sequences
+
+	TypeSequence typesOfNodes(Resolver resolver) {
+		return () -> {
+			resolver.visit.flush(); // using index, needs flush
+			return nodeIndices.typeIteratorOverAll();
+		};
+	}
+
+	TypeSequence typesOfNodesWithNamespace(Namespace ns) {
+		return () -> {
+			int nsc = space.inventory.namespaceLookup.getByObj().getOrDefault(ns, -1);
+			return nsc < 0 ? TypeSequence.emptyIterator : nodeIndices.typeIteratorOverNs(nsc);
+		};
+	}
+
 	// debug methods
 
 	void dump() {

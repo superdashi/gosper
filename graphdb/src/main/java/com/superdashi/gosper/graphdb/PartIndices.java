@@ -16,6 +16,8 @@
  */
 package com.superdashi.gosper.graphdb;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
 
 import org.h2.mvstore.MVMap;
@@ -100,6 +102,15 @@ final class PartIndices {
 	}
 
 
+	PrimitiveIterator.OfLong typeIteratorOverAll() {
+		return typeIterator(-1);
+	}
+
+	PrimitiveIterator.OfLong typeIteratorOverNs(int nsc) {
+		return typeIterator(nsc);
+	}
+
+
 	void applyOwnerChange(OwnerChange change) {
 		applyNSNChange(partsByOwner, change);
 	}
@@ -151,6 +162,41 @@ final class PartIndices {
 				index.cursor(from),
 				NSNKey::edgeId,
 				to);
+	}
+
+	private PrimitiveIterator.OfLong keyIterator(MVMap<NSNKey, Value> index) {
+		return new MappedLongIterator<>(index.keyIterator(null), NSNKey::nsnId, null);
+	}
+
+	private PrimitiveIterator.OfLong typeIterator(int nsc) {
+		// needs extra method on H2 Cursor for efficient implementation
+		return new PrimitiveIterator.OfLong() {
+
+			private NSNKey next = null;
+
+			{ advance(); }
+
+			@Override
+			public boolean hasNext() {
+				return next != null;
+			}
+
+			@Override
+			public long nextLong() {
+				if (next == null) throw new NoSuchElementException();
+				long value = next.nsnId();
+				advance();
+				return value;
+			}
+
+			private void advance() {
+				next = next == null ? new NSNKey(Math.max(nsc, 0), 0, 0) : new NSNKey(next.nsnId() + 1, 0);
+				next = partsByType.ceilingKey(next);
+				if (nsc != -1 && next != null && next.nsCode != nsc) {
+					next = null;
+				}
+			}
+		};
 	}
 
 	private void applyNSNChange(MVMap<NSNKey, Value> index, NSNChange c) {

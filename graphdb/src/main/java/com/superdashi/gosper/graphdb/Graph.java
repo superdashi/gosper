@@ -59,6 +59,17 @@ public final class Graph {
 //		return new Graph(visit, new Restriction(nodes, edges, visit));
 //	}
 
+	public TypeCursor types() {
+		Resolver resolver = new Resolver(this);
+		return new TypeCursor(indices.typesOfNodes(resolver), resolver);
+	}
+
+	public TypeCursor typesWithNamespace(Namespace ns) {
+		if (ns == null) throw new IllegalArgumentException("null ns");
+		Resolver resolver = new Resolver(this);
+		return new TypeCursor(indices.typesOfNodesWithNamespace(ns), resolver);
+	}
+
 	public NodeCursor nodes() {
 		Resolver resolver = new Resolver(this);
 		return new NodeCursor(indices.allNodes(resolver), resolver);

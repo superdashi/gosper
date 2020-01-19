@@ -30,9 +30,9 @@ public class ConstraintException extends IllegalStateException {
 		DELETED_PART("deleted part"),
 		UNMODIFIABLE_PART("unmodifiable part"),
 		UNDELETABLE_PART("undeletable part"),
-		NON_EXISTENT_PART("non-existent part"),
-		NON_UNIQUE_PART("non-unique part"),
 		PART_NOT_OWNED("part not owned"),
+		NON_EXISTENT("non-existent"),
+		NON_UNIQUE("non-unique"),
 		REENTRANT_EDIT("reentrant edit"),
 		;
 
