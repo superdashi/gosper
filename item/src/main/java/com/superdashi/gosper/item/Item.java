@@ -120,7 +120,7 @@ public final class Item implements Serializable {
 			ordinal = item.ordinal;
 			created = item.created;
 			modified = item.modified;
-			qualifier = item.qualifier;
+			priority = item.priority;
 			qualifier = item.qualifier;
 		}
 
