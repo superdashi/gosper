@@ -22,11 +22,14 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.tomgibara.collect.Collect;
 import com.tomgibara.collect.EquivalenceMap;
@@ -94,6 +97,14 @@ public final class Item implements Serializable {
 	}
 
 	public static class Builder {
+
+		private static final String[] defaultProperties = { "label", "description" };
+
+		private static String[] validatedProperties(String... properties) {
+			if (properties == null) throw new IllegalArgumentException("null properties");
+			if (Arrays.asList(properties).contains(null)) throw new IllegalArgumentException("null property");
+			return properties.length == 0 ? defaultProperties : properties;
+		}
 
 		private EquivalenceMap<String, Value> extras;
 		private String   label;
@@ -230,6 +241,16 @@ public final class Item implements Serializable {
 			return this;
 		}
 
+		public Builder interpolate(String... properties) {
+			performInterpolation(build(), validatedProperties(properties));
+			return this;
+		}
+
+		public Builder interpolate(Item item, String... properties) {
+			performInterpolation(item, validatedProperties(properties));
+			return this;
+		}
+
 		public Item build() {
 			extras = extras.isEmpty() ? extrasMaps.emptyMap() : extras.immutableView();
 			return new Item(this);
@@ -247,6 +268,50 @@ public final class Item implements Serializable {
 			return extras;
 		}
 
+		private void performInterpolation(Item item, String[] properties) {
+			for (String property : properties) {
+				Supplier<String> get;
+				Consumer<String> set;
+				switch (property) {
+					case "label" :
+						get = () -> label;
+						set = s -> label = s;
+						break;
+					case "description" :
+						get = () -> description;
+						set = s -> description = s;
+						break;
+					default :
+						get = () -> extras.get(property).optionalString().orElse(null);
+						set = s -> extras.put(property, Value.ofString(s) );
+						break;
+				}
+				String string = get.get();
+				if (string == null) continue;
+				StringBuilder sb = null;
+				int end = -1;
+				while (true) {
+					int start = string.indexOf('{', end + 1);
+					if (start == -1) break;
+					int close = string.indexOf('}', start + 1);
+					if (close == -1 || close == start + 1) break;
+					String name = string.substring(start + 1, close);
+					// TODO should not replace if name is not potentially a valid property name
+					// since there are no current constraints property names & extra names, we can defer this
+					String replacement = item.value(name).as(Value.Type.STRING).optionalString().orElse("");
+					if (sb == null) sb = new StringBuilder();
+					sb.append(string, end + 1, start).append(replacement);
+					end = close;
+				}
+				if (sb != null) {
+					set.accept( sb.append(string.substring(end + 1)).toString() );
+				}
+			}
+		}
+
+		private void interpolate(String source, Item item) {
+
+		}
 	}
 
 	private final EquivalenceMap<String, Value> extras;

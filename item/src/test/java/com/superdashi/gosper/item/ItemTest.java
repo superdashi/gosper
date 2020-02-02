@@ -74,4 +74,29 @@ public class ItemTest {
 		Assert.assertFalse( Item.newBuilder().qualifyWithLang("en").build().qualifier().isUniversal() );
 	}
 
+	@Test
+	public void testLabelInterpolate() {
+		testLabelInterpolate("Hello {ex:noun}!", "ex:noun", "World", "Hello World!");
+		testLabelInterpolate("{ex:noun}", "ex:noun", "Solo", "Solo");
+		testLabelInterpolate("Suf{ex:noun}", "ex:noun", "fix", "Suffix");
+		testLabelInterpolate("{ex:noun}fix", "ex:noun", "Pre", "Prefix");
+		testLabelInterpolate("{ex:noun}", "ex:noun", "", "");
+		testLabelInterpolate("A{ex:noun}", "ex:noun", "", "A");
+		testLabelInterpolate("{ex:noun}B", "ex:noun", "", "B");
+		testLabelInterpolate("A{ex:noun}B", "ex:noun", "", "AB");
+		testLabelInterpolate("A{ex:missing}B", "ex:noun", "", "AB");
+		testLabelInterpolate("{ex:noun}A{ex:noun}B{ex:noun}", "ex:noun", "", "AB");
+		testLabelInterpolate("{ex:noun}A{ex:noun}B{ex:noun}", "ex:noun", "X", "XAXBX");
+		testLabelInterpolate("{aa", "ex:noun", "", "{aa");
+		testLabelInterpolate("a{a", "ex:noun", "", "a{a");
+		testLabelInterpolate("aa{", "ex:noun", "", "aa{");
+
+		Assert.assertEquals("X{}Y", Item.newBuilder().label("X{}Y").interpolate().build().label().get());
+		Assert.assertEquals("XY", Item.newBuilder().label("X{gone}Y").interpolate().build().label().get());
+		Assert.assertEquals("XY", Item.newBuilder().label("X{gone}Y").interpolate().build().label().get());
+	}
+
+	private void testLabelInterpolate(String label, String property, String value, String expected) {
+		Assert.assertEquals(expected, Item.newBuilder().label(label).addExtra(property, Value.ofString(value)).interpolate().build().label().get());
+	}
 }

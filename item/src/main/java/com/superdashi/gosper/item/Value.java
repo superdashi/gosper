@@ -118,6 +118,7 @@ public abstract class Value {
 		@Override public Instant instant()   { throw exception(); }
 		@Override public Image image()       { throw exception(); }
 		@Override public Priority priority() { throw exception(); }
+		@Override public Value orElse(Value alternative) { if (alternative == null) throw new IllegalArgumentException("null alternative"); return alternative; }
 		@Override public int hashCode() { return 0; }
 		@Override public String toString() { return "<empty>"; }
 		private NoSuchElementException exception() { return new NoSuchElementException("empty"); }
@@ -263,6 +264,11 @@ public abstract class Value {
 
 	public void ifNotEmpty(Consumer<Value> consumer) {
 		if (!isEmpty()) consumer.accept(this);
+	}
+
+	public Value orElse(Value alternative) {
+		if (alternative == null) throw new IllegalArgumentException("null alternative");
+		return this;
 	}
 
 	// object methods
