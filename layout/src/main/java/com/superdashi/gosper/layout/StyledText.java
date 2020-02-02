@@ -22,21 +22,42 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.tomgibara.fundament.Mutability;
 
 //TODO a simplify method would be useful
+// remove empty spans
 // merge either adjacent spans with the same style where neither has an id
 // merge adjacent spans where both have the same style and share an id
 // merge child styles without an id that are implied by their parent
+
+// TODO can we avoid creating a copy for non-immutables?
 public final class StyledText implements Mutability<StyledText> {
 
 	// statics
 
-	private static Comparator<Span> comp = (a, b) -> a.from - b.from;
+	private static Comparator<Span> comp = Comparator.comparingInt(a -> a.from);
+
+	private static void checkSpanId(String id) {
+		if (id == null) throw new IllegalArgumentException("null id");
+		if (id.isEmpty()) throw new IllegalArgumentException("empty id");
+	}
+
+	private static <T> Stream<T> asStream(Iterator<T> iterator) {
+		return StreamSupport.stream(
+				Spliterators.spliteratorUnknownSize(
+						iterator,
+						Spliterator.IMMUTABLE |
+								Spliterator.ORDERED |
+								Spliterator.NONNULL
+				), false);
+	}
 
 	// fields
 
@@ -76,7 +97,7 @@ public final class StyledText implements Mutability<StyledText> {
 			root = that.root;
 		} else {
 			flexible = null;
-			fixed = that.fixed == null ? flexible.toString() : that.fixed;
+			fixed = that.fixed == null ? that.flexible.toString() : that.fixed;
 			root = clone(null, that.root);
 		}
 	}
@@ -106,7 +127,7 @@ public final class StyledText implements Mutability<StyledText> {
 		root.insertText(index, text);
 	}
 
-	public Optional<Span> insertStyledText(int index, Style style, String text) {
+	public Span insertStyledText(int index, Style style, String text) {
 		return root.insertStyledText(index, style, text);
 	}
 
@@ -114,7 +135,7 @@ public final class StyledText implements Mutability<StyledText> {
 		root.insertText(root.to, text);
 	}
 
-	public Optional<Span> appendStyledText(Style style, String text) {
+	public Span appendStyledText(Style style, String text) {
 		return root.insertStyledText(root.to, style, text);
 	}
 
@@ -155,7 +176,7 @@ public final class StyledText implements Mutability<StyledText> {
 
 	public Iterable<Segment> segments(Style style) {
 		if (style == null) throw new IllegalArgumentException("null style");
-		return () -> new Flattener(root, style);
+		return () -> new Flattener(immutable().root, style);
 	}
 
 	public Stream<Segment> segmentStream() {
@@ -164,11 +185,15 @@ public final class StyledText implements Mutability<StyledText> {
 
 	public Stream<Segment> segmentStream(Style style) {
 		if (style == null) throw new IllegalArgumentException("null style");
-		return StreamSupport.stream(segments().spliterator(), false);
+		return asStream( new Flattener(immutable().root, style) );
 	}
 
 	public Iterable<Span> spans() {
 		return () -> new SpanIterator(root);
+	}
+
+	public Stream<Span> spansStream() {
+		return asStream( new SpanIterator(immutable().root) );
 	}
 
 	// mutability methods
@@ -202,6 +227,19 @@ public final class StyledText implements Mutability<StyledText> {
 		return sb.toString();
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!(obj instanceof StyledText)) return false;
+		StyledText that = (StyledText) obj;
+		return this.text().equals(that.text()) && this.root.matches(that.root);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(mutable, view, flexible, fixed, root);
+	}
+
 	// private helper methods
 
 	private String substring(int from, int to) {
@@ -228,22 +266,18 @@ public final class StyledText implements Mutability<StyledText> {
 		return clone;
 	}
 
-	private void insertTextImpl(int index, String text) {
+	private void insertTextImpl(int index, String text, Span within) {
 		int delta = text.length();
 		if (delta == 0) return;
 		if (flexible == null) flexible = new StringBuilder(fixed);
 		flexible.insert(index, text);
 		fixed = null;
-		adjust(index, delta);
+		adjust(index, delta, within);
 	}
 
-	private void adjust(int index, int delta) {
-		root.adjustSelfAndDescendants(index, delta);
-		// special case - growing from empty
-		// theoretically, the delta is appended beyond the end of the empty root
-		// we don't want this and need to deal with it, we do it here
-		if (delta > 0 && root.to == index) root.to += delta;
-		assert root.from == 0 && root.to == length();
+	// within is the largest span that should 'contain' the adustment
+	private void adjust(int index, int delta, Span within) {
+		root.adjustSelfAndDescendants(index, delta, within);
 	}
 
 	public final class Span {
@@ -263,7 +297,6 @@ public final class StyledText implements Mutability<StyledText> {
 			this.from = from;
 			this.to = to;
 			assert from >= 0;
-			assert parent == null || to > from;
 			assert to <= StyledText.this.length();
 		}
 
@@ -318,7 +351,7 @@ public final class StyledText implements Mutability<StyledText> {
 		}
 
 		public List<Span> applyStyle(Style style, String id, int from, int to) {
-			if (id == null) throw new IllegalArgumentException("null id");
+			checkSpanId(id);
 			return applyStyleImpl(style, id, from, to);
 		}
 
@@ -331,20 +364,47 @@ public final class StyledText implements Mutability<StyledText> {
 			if (text == null) throw new IllegalArgumentException("null text");
 			checkValid();
 			checkMutable();
-			insertTextImpl(index, text);
+			insertTextImpl(index, text, this);
+		}
+
+		public void appendText(String text) {
+			if (text == null) throw new IllegalArgumentException("null text");
+			checkValid();
+			checkMutable();
+			insertTextImpl(to, text, this);
 		}
 
 		//TODO add method to insert actual StyledText too
-		public Optional<Span> insertStyledText(int index, Style style, String text) {
+		//TODO check for mutability?
+		public Span insertStyledText(int index, Style style, String text) {
 			index = checkedIndex(index);
 			if (style == null) throw new IllegalArgumentException("null style");
 			if (text == null) throw new IllegalArgumentException("null text");
-			if (text.isEmpty()) return Optional.empty();
-			insertTextImpl(index, text);
-			Span parent = findSpan(index, index + text.length());
-			Span child = new Span(parent, style.immutable(), text, index, index + text.length());
-			parent.children.add(child);
-			return Optional.of(child);
+			return insertStyledTextImpl(index, id, style, text);
+		}
+
+		//TODO check for mutability?
+		public Span insertStyledText(int index, String id, Style style, String text) {
+			index = checkedIndex(index);
+			checkSpanId(id);
+			if (style == null) throw new IllegalArgumentException("null style");
+			if (text == null) throw new IllegalArgumentException("null text");
+			return insertStyledTextImpl(index, id, style, text);
+		}
+
+		//TODO check for mutability?
+		public Span appendStyledText(Style style, String text) {
+			if (style == null) throw new IllegalArgumentException("null style");
+			if (text == null) throw new IllegalArgumentException("null text");
+			return insertStyledTextImpl(to, null, style, text);
+		}
+
+		//TODO check for mutability?
+		public Span appendStyledText(String id, Style style, String text) {
+			checkSpanId(id);
+			if (style == null) throw new IllegalArgumentException("null style");
+			if (text == null) throw new IllegalArgumentException("null text");
+			return insertStyledTextImpl(to, id, style, text);
 		}
 
 		public void deleteText(int from, int to) {
@@ -380,8 +440,18 @@ public final class StyledText implements Mutability<StyledText> {
 			from = to = -1;
 		}
 
-		public boolean invalid() {
+		public boolean isEmpty() {
 			return to == from;
+		}
+
+		// private helper methods
+
+		private Span insertStyledTextImpl(int index, String id, Style style, String text) {
+			insertTextImpl(index, text, this);
+			Span parent = findSpan(index, index + text.length());
+			Span child = new Span(parent, style.immutable(), id, index, index + text.length());
+			parent.children.add(child);
+			return child;
 		}
 
 		private void spansWithId(String id, List<Span> spans) {
@@ -407,18 +477,17 @@ public final class StyledText implements Mutability<StyledText> {
 			return this;
 		}
 
-		private void adjustSelfAndDescendants(int index, int delta) {
-			if (index < to) to += delta;
+		private void adjustSelfAndDescendants(int index, int delta, Span within) {
 			if (index < from) from += delta;
-			assert parent == null || to > from;
+			if (index < to || within != null && index == to) to += delta;
+			if (within == this) within = null;
 			for (Span child : children) {
-				child.adjustSelfAndDescendants(index, delta);
+				child.adjustSelfAndDescendants(index, delta, within);
 			}
 		}
 
 		private List<Span> applyStyleImpl(Style style, String id, int from, int to) {
 			if (style == null) throw new IllegalArgumentException("null style");
-			if (from == to) throw new IllegalArgumentException("empty span");
 			if (from > to) throw new IllegalArgumentException("from exceeds to");
 			from = checkedIndex(from);
 			to = checkedIndex(to);
@@ -493,7 +562,7 @@ public final class StyledText implements Mutability<StyledText> {
 			if (flexible == null) flexible = new StringBuilder(fixed);
 			flexible.delete(from, to);
 			fixed = null;
-			adjust(from, from - to);
+			adjust(from, from - to, this);
 		}
 
 		private Style buildStyle(int index, Style style) {
@@ -524,6 +593,17 @@ public final class StyledText implements Mutability<StyledText> {
 //			}
 //			return false;
 //		}
+
+		/* used for testing equality between styledtext */
+		boolean matches(Span that) {
+			if (this.from != that.from || this.to != that.to || !this.style.equals(that.style)) return false;
+			int childCount = this.children.size();
+			if (childCount != that.children.size()) return false;
+			for (int i = 0; i < childCount; i++) {
+				if (!this.children.get(i).matches(that.children.get(i))) return false;
+			}
+			return true;
+		}
 
 		private void toString(StringBuilder sb, int count) {
 			String name;
@@ -749,6 +829,7 @@ public final class StyledText implements Mutability<StyledText> {
 			// move to our sibling
 			stack.set(stack.size() - 1, sibling);
 		}
+
 	}
 
 	public static class Segment {

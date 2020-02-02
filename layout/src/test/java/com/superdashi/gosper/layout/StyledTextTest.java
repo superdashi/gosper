@@ -59,7 +59,7 @@ public class StyledTextTest {
 		st.toString(); // serves as a check for valid indices
 
 		Assert.assertEquals("this yled text", st.text());
-		Span span = st.root().children().get(0).insertStyledText(2, under, "ooo").get();
+		Span span = st.root().children().get(0).insertStyledText(2, under, "ooo");
 		Assert.assertEquals("this yloooed text", st.text());
 		Assert.assertEquals(1, st.styleAt(7).textUnderline());
 		span.delete();
@@ -166,9 +166,9 @@ public class StyledTextTest {
 		st.root().applyStyle(bold, "b", 13, 17);
 		st.root().applyStyle(under, "u", 26, 28);
 
-		for (Span span : st.spans()) {
-			System.out.println(span.text());
-		}
+		st.spansStream().forEach(span -> {
+				System.out.println(span.text());
+		});
 	}
 
 	@Test
@@ -177,5 +177,26 @@ public class StyledTextTest {
 		StyledText text = new StyledText();
 		text.appendStyledText(boldStyle, "Display Brightness");
 		text.appendText("Yeah!");
+	}
+
+	@Test
+	public void testEmptySpan() {
+		Style bold = new Style().textWeight(1).immutable();
+		StyledText text = new StyledText("This is a  word");
+		Style base = text.styleAt(0);
+		Span span = text.insertStyledText(10, bold, "");
+		Assert.assertTrue(span.isEmpty());
+		Assert.assertEquals("This is a  word", text.text());
+		span.insertText(0,"bold");
+		Assert.assertEquals("This is a bold word", text.text());
+		Assert.assertEquals(base, text.styleAt(9));
+		Assert.assertEquals(bold, text.styleAt(10));
+		Assert.assertEquals(bold, text.styleAt(13));
+		Assert.assertEquals(base, text.styleAt(14));
+		Assert.assertEquals(span, text.spanContaining(12));
+		span.deleteText(0,4);
+		Assert.assertEquals("This is a  word", text.text());
+		Assert.assertTrue(span.isEmpty());
+		Assert.assertEquals(text.root(), text.spanContaining(12));
 	}
 }
