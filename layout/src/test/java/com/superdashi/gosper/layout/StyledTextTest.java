@@ -29,6 +29,15 @@ import com.superdashi.gosper.layout.StyledText.Span;
 
 public class StyledTextTest {
 
+	private static void expectISE(Runnable r) {
+		try {
+			r.run();
+			Assert.fail("no ISE thrown");
+		} catch (IllegalStateException e) {
+			/* expected */
+		}
+	}
+
 	@Test
 	public void testManipulation() {
 		Style root = new Style().immutable();
@@ -199,4 +208,22 @@ public class StyledTextTest {
 		Assert.assertTrue(span.isEmpty());
 		Assert.assertEquals(text.root(), text.spanContaining(12));
 	}
+
+	@Test
+	public void testImmutability() {
+		StyledText text = new StyledText("no changes").immutable();
+		Style style = new Style();
+
+		expectISE(() -> text.truncateText(2));
+		expectISE(() -> text.appendText(" thank you"));
+		expectISE(() -> text.insertText(3, "more "));
+		expectISE(() -> text.deleteText(0, 3));
+		expectISE(() -> text.insertStyledText(3, style, "more "));
+		expectISE(() -> text.appendStyledText(style, " thank you"));
+
+		expectISE(() -> text.root().applyStyle(style, 0, 2));
+		expectISE(() -> text.root().insertStyledText(0, style, "absolutely"));
+		expectISE(() -> text.root().appendStyledText(style, " today"));
+	}
+
 }

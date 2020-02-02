@@ -247,7 +247,7 @@ public final class StyledText implements Mutability<StyledText> {
 	}
 
 	private void checkMutable() {
-		if (!mutable) throw new IllegalArgumentException("immutable");
+		if (!mutable) throw new IllegalStateException("immutable");
 	}
 
 	private void checkIndex(int index) {
@@ -447,6 +447,8 @@ public final class StyledText implements Mutability<StyledText> {
 		// private helper methods
 
 		private Span insertStyledTextImpl(int index, String id, Style style, String text) {
+			checkValid();
+			checkMutable();
 			insertTextImpl(index, text, this);
 			Span parent = findSpan(index, index + text.length());
 			Span child = new Span(parent, style.immutable(), id, index, index + text.length());
@@ -489,6 +491,8 @@ public final class StyledText implements Mutability<StyledText> {
 		private List<Span> applyStyleImpl(Style style, String id, int from, int to) {
 			if (style == null) throw new IllegalArgumentException("null style");
 			if (from > to) throw new IllegalArgumentException("from exceeds to");
+			checkValid();
+			checkMutable();
 			from = checkedIndex(from);
 			to = checkedIndex(to);
 			style = style.immutable();
