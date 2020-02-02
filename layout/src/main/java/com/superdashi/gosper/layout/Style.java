@@ -20,9 +20,11 @@ import com.superdashi.gosper.color.Argb;
 import com.superdashi.gosper.logging.Logger;
 import com.tomgibara.intgeom.IntMargins;
 
+import java.util.Objects;
+
 public final class Style {
 
-	private static final Style noStyle = new Style();
+	private static final Style noStyle = new Style().immutable();
 
 	private static int combine(int under, int over) {
 		return over == NO_VALUE ? under : over;
@@ -338,6 +340,51 @@ public final class Style {
 		logger.debug().message("alignmentX    {}").values(alignmentX   ).log();
 		logger.debug().message("alignmentY    {}").values(alignmentY   ).log();
 	}
+
+	// object methods
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!(obj instanceof Style)) return false;
+		Style style = (Style) obj;
+		return
+				colorFg == style.colorFg &&
+				colorBg == style.colorBg &&
+				marginLeft == style.marginLeft &&
+				marginTop == style.marginTop &&
+				marginRight == style.marginRight &&
+				marginBottom == style.marginBottom &&
+				textUnderline == style.textUnderline &&
+				textWeight == style.textWeight &&
+				textItalic == style.textItalic &&
+				textOutline == style.textOutline &&
+				lineLimit == style.lineLimit &&
+				lineSpace == style.lineSpace &&
+				Objects.equals(alignmentX, style.alignmentX) &&
+				Objects.equals(alignmentY, style.alignmentY);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(
+				colorFg,
+				colorBg,
+				marginLeft,
+				marginTop,
+				marginRight,
+				marginBottom,
+				textUnderline,
+				textWeight,
+				textItalic,
+				textOutline,
+				lineLimit,
+				lineSpace,
+				alignmentX,
+				alignmentY
+		);
+	}
+
 
 	// private helper methods
 
