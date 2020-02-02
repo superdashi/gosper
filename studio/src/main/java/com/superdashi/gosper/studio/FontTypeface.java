@@ -34,6 +34,7 @@ import java.util.Map;
 
 import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
+import com.superdashi.gosper.layout.StyledText.Segment;
 import com.superdashi.gosper.layout.StyledText.Span;
 
 final class FontTypeface extends Typeface {
@@ -119,8 +120,8 @@ final class FontTypeface extends Typeface {
 	private AttributedString convert(StyledText text) {
 		AttributedString str = new AttributedString(text.root().text());
 		str.addAttribute(TextAttribute.FONT, regularFont);
-		for (Span span : text.spans()) {
-			str.addAttributes(attributes(span.style()), span.from(), span.to());
+		for (Segment segment : text.segments()) {
+			str.addAttributes(attributes(segment.style), segment.from, segment.to);
 		}
 		return str;
 	}
