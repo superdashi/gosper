@@ -69,6 +69,12 @@
       <artifactId>radix4</artifactId>
       <version>1.0.0</version>
     </dependency>
+    <!-- TODO is a lighter-weight dependency available? -->
+    <dependency>
+      <groupId>com.vladsch.flexmark</groupId>
+      <artifactId>flexmark</artifactId>
+      <version>0.50.46</version>
+    </dependency>
     <!-- TODO cut this -->
     <dependency>
       <groupId>com.univocity</groupId>
