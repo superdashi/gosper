@@ -18,6 +18,7 @@ package com.superdashi.gosper.studio;
 
 import java.util.Arrays;
 
+import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
 import com.superdashi.gosper.layout.StyledText.Segment;
 import com.superdashi.gosper.studio.Canvas.State;
@@ -129,10 +130,10 @@ class AtlasTypeface extends Typeface implements TextMeasurer {
 	}
 
 	@Override
-	public int accommodatedCharCount(StyledText text, int width, int ellipsisWidth) {
+	public int accommodatedCharCount(Style style, StyledText text, int width, int ellipsisWidth) {
 		if (text == null) throw new IllegalArgumentException("null text");
 		if (ellipsisWidth < 0L) throw new IllegalArgumentException("negative ellipsisWidth");
-		Iterable<Segment> segments = text.segments();
+		Iterable<Segment> segments = text.segments(style);
 		return accommodatedCharCount(text.length(), w -> accommodatedCharCount(segments, w), width, ellipsisWidth);
 	}
 
@@ -203,12 +204,12 @@ class AtlasTypeface extends Typeface implements TextMeasurer {
 		}
 
 		@Override
-		public void renderText(int x, int y, StyledText text) {
+		public void renderText(int x, int y, Style style, StyledText text) {
 			y -= baseline;
 			//TODO is there a more efficient way of handling color changes?
 			State state = null;
 			int p = -1;
-			for (Segment segment : text.segments()) {
+			for (Segment segment : text.segments(style)) {
 				// skip empty segments
 				if (segment.text.length() == 0) continue;
 				int color = segment.style.colorFg();
@@ -222,17 +223,17 @@ class AtlasTypeface extends Typeface implements TextMeasurer {
 						state = null;
 					}
 				}
-				TextStyle style = TextStyle.fromStyle(segment.style);
+				TextStyle textStyle = TextStyle.fromStyle(segment.style);
 				int[] codepoints = segment.text.codePoints().toArray();
-				x = font(style).renderString(x, y, underlineOffset(style), p, codepoints, canvas);
+				x = font(textStyle).renderString(x, y, underlineOffset(textStyle), p, codepoints, canvas);
 				p = codepoints[codepoints.length - 1];
 			}
 			if (state != null) state.restore();
 		}
 
 		@Override
-		public void renderText(float x, float y, StyledText text) {
-			renderText(Math.round(x), Math.round(y), text);
+		public void renderText(float x, float y, Style style, StyledText text) {
+			renderText(Math.round(x), Math.round(y), style, text);
 		}
 
 	}

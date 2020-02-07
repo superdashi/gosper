@@ -239,14 +239,14 @@ public class Bar extends Component {
 				int ey = spec.metrics.barHeight - spec.metrics.barBaselineGap;
 				int ex = x;
 				//TODO small loss of fidelity here, bold overflow would have given a bold ellipsis
-				int count = typeMetrics.accommodatedCharCount(text, limit - x, spec.ellipsisWidth(TextStyle.regular()));
+				int count = typeMetrics.accommodatedCharCount(Style.noStyle(), text, limit - x, spec.ellipsisWidth(TextStyle.regular()));
 				boolean renderEllipsis = count < text.length();
 				if (renderEllipsis) {
 					text.truncateText(count);
 					text.appendText(spec.theme.ellipsisString);
 				}
 				canvas.color(spec.theme.barTextColor);
-				ops.moveTo(ex, ey).renderText(text);
+				ops.moveTo(ex, ey).renderText(Style.noStyle(), text);
 			}
 			textDirty = false;
 		}

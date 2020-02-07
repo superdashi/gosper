@@ -18,6 +18,7 @@ package com.superdashi.gosper.studio;
 
 import java.util.Optional;
 
+import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
 import com.tomgibara.geom.core.Point;
 import com.tomgibara.geom.core.Rect;
@@ -134,7 +135,7 @@ public interface Canvas extends Destroyable {
 		//TODO probably replace with styled string
 		TextOps renderString(TextStyle style, String str);
 
-		TextOps renderText(StyledText text);
+		TextOps renderText(Style style, StyledText text);
 
 	}
 
@@ -161,7 +162,7 @@ public interface Canvas extends Destroyable {
 		IntTextOps renderString(TextStyle style, String str);
 
 		@Override
-		IntTextOps renderText(StyledText text);
+		IntTextOps renderText(Style style, StyledText text);
 
 	}
 
@@ -188,7 +189,7 @@ public interface Canvas extends Destroyable {
 		FloatTextOps renderString(TextStyle style, String str);
 
 		@Override
-		FloatTextOps renderText(StyledText text);
+		FloatTextOps renderText(Style style, StyledText text);
 
 		//TODO no proper float support at present
 		// int accommodatedCharCount(TextStyle style, String str, float width, int ellipsisWidth);

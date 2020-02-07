@@ -226,4 +226,25 @@ public class StyledTextTest {
 		expectISE(() -> text.root().appendStyledText(style, " today"));
 	}
 
+	@Test
+	public void testCopyRange() {
+		Style bold = new Style().textWeight(1).immutable();
+		Style italic = new Style().textItalic(1).immutable();
+
+		StyledText text = new StyledText("this is some styled text");
+		text.root().applyStyle(bold, 5, 19);
+		text.root().applyStyle(italic, 8, 12);
+
+		StyledText s0 = text.copyRange(0,0);
+		System.out.println(s0);
+		StyledText s1 = text.copyRange(0,10);
+		System.out.println(s1);
+		StyledText s2 = text.copyRange(10, 24);
+		System.out.println(s2);
+		StyledText s3 = text.copyRange(0, 24);
+		System.out.println(s3);
+		StyledText s4 = text.copyRange(8, 12);
+		System.out.println(s4);
+	}
+
 }

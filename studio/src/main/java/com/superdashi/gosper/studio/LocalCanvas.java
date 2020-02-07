@@ -32,6 +32,7 @@ import java.util.Deque;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
 import com.superdashi.gosper.studio.ColorPlane.ColorFrame;
 import com.superdashi.gosper.studio.Typeface.TextRenderer;
@@ -589,10 +590,10 @@ class LocalCanvas implements Canvas {
 		}
 
 		@Override
-		public IntTextOps renderText(StyledText text) {
+		public IntTextOps renderText(Style style, StyledText text) {
 			if (text == null) throw new IllegalArgumentException("null text");
 			if (text.isEmpty()) return this;
-			renderer.renderText(x, y, text);
+			renderer.renderText(x, y, style, text);
 			return this;
 		}
 
@@ -679,10 +680,10 @@ class LocalCanvas implements Canvas {
 		}
 
 		@Override
-		public FloatTextOps renderText(StyledText text) {
+		public FloatTextOps renderText(Style style, StyledText text) {
 			if (text == null) throw new IllegalArgumentException("null text");
 			if (text.isEmpty()) return this;
-			renderer.renderText(x, y, text);
+			renderer.renderText(x, y, style, text);
 			return this;
 		}
 

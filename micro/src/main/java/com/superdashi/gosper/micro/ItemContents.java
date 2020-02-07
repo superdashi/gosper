@@ -18,14 +18,24 @@ package com.superdashi.gosper.micro;
 
 import java.util.function.Function;
 
+import com.superdashi.gosper.item.Value;
+import com.superdashi.gosper.layout.StyledText;
+
 //TODO name is slightly confusing
 //TODO consider implications of making this an interface
 //TODO construct instances lazily?
+
+/**
+ * Instances of this class can extract content from an item.
+ * @see Content
+ * @see com.superdashi.gosper.item.Item
+ */
+
 public abstract class ItemContents {
 
 	// statics
 
-	private static final ItemContents label       = new FunctionContents(model -> Content.textContent(model.item.label().orElse("")));
+	private static final ItemContents label       = new FunctionContents(model -> Content.textContent(model.label()));
 	private static final ItemContents description = new FunctionContents(model -> Content.textContent(model.item.description().orElse("")));
 	private static final ItemContents picture     = new FunctionContents(Content::pictureContent);
 	private static final ItemContents icon        = new FunctionContents(Content::iconContent);
@@ -47,6 +57,19 @@ public abstract class ItemContents {
 			@Override
 			public Content contentFrom(ItemModel model) {
 				return Content.cardContent(design, model);
+			}
+		};
+	}
+
+	public static ItemContents commonMark(CommonMark commonMark, String property) {
+		if (commonMark == null) throw new IllegalArgumentException("null commonMark");
+		if (property == null) throw new IllegalArgumentException("null property");
+		return new ItemContents() {
+			@Override
+			public Content contentFrom(ItemModel model) {
+				String text = model.item.value(property).as(Value.Type.STRING).optionalString().orElse("");
+				StyledText styledText = commonMark.parseAsStyledText(text);
+				return Content.styledTextContent(styledText);
 			}
 		};
 	}

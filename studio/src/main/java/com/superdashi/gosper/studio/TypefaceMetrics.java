@@ -16,6 +16,7 @@
  */
 package com.superdashi.gosper.studio;
 
+import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
 import com.superdashi.gosper.studio.Typeface.TextMeasurer;
 
@@ -43,12 +44,12 @@ public final class TypefaceMetrics {
 		return measurer.accommodatedCharCount(style, str, width, Math.min(width, ellipsisWidth));
 	}
 
-	public int accommodatedCharCount(StyledText text, int width, int ellipsisWidth) {
+	public int accommodatedCharCount(Style style, StyledText text, int width, int ellipsisWidth) {
 		if (text == null) throw new IllegalArgumentException("null text");
 		if (width < 0) throw new IllegalArgumentException("negative width");
 		if (text.isEmpty()) return 0;
 		if (ellipsisWidth < 0) throw new IllegalArgumentException("negative ellipsisWidth");
-		return measurer.accommodatedCharCount(text, width, Math.min(width, ellipsisWidth));
+		return measurer.accommodatedCharCount(style, text, width, Math.min(width, ellipsisWidth));
 	}
 
 	public int intRenderedWidthOfString(TextStyle style, String str) {

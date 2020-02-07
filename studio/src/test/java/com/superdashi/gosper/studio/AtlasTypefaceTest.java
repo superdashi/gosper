@@ -181,7 +181,7 @@ public class AtlasTypefaceTest extends RenderTest  {
 		.intOps()
 		.newText(typeface)
 		.moveTo(0, baseline)
-		.renderText(text)
+		.renderText(Style.noStyle(), text)
 		.canvas()
 		.destroy();
 		recordResult(surface, "atlasStyledText");

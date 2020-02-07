@@ -26,6 +26,8 @@ import java.util.Map;
 import com.superdashi.gosper.core.Debug;
 import com.superdashi.gosper.item.Qualifier;
 import com.superdashi.gosper.item.ScreenClass;
+import com.superdashi.gosper.layout.Style;
+import com.superdashi.gosper.layout.StyledText;
 import com.superdashi.gosper.studio.ClearPlane;
 import com.superdashi.gosper.studio.Frame;
 import com.superdashi.gosper.studio.Surface;
@@ -109,6 +111,7 @@ public class VisualSpec {
 		return typeface.metrics().intRenderedWidthOfString(textStyle, line);
 	}
 
+	//TODO unify
 	//TODO not the best place for this, since it doesn't actually depend on these metrics
 	public List<String> splitIntoLines(Typeface typeface, TextStyle style, String text, int width, int maxLines) {
 		List<String> lines = new ArrayList<>();
@@ -133,6 +136,40 @@ public class VisualSpec {
 				lines.add(text.substring(0, count));
 				while (text.charAt(count) == ' ') count++;
 				text = text.substring(count);
+			}
+		}
+		return lines;
+	}
+
+	//TODO not the best place for this, since it doesn't actually depend on these metrics
+	//TODO this is very inefficient
+	public List<StyledText> splitIntoLines(Typeface typeface, Style style, StyledText styledText, int width, int maxLines) {
+		List<StyledText> lines = new ArrayList<>();
+		if (maxLines >= 1) {
+			while (!styledText.isEmpty()) {
+				if (lines.size() == maxLines) { // quit early - dump remaining text at end of list
+					lines.add(styledText.immutableCopy());
+					return lines;
+				}
+				boolean lastLine = lines.size() == maxLines - 1;
+
+				String text = styledText.text();
+				int length = text.length();
+				TextStyle textStyle = TextStyle.fromStyle( styledText.styleAt(length - 1).mutable().apply(style) );
+				int ellipsisWidth = lastLine ? ellipsisWidth(textStyle) : 0;
+				int count = typeface.metrics().accommodatedCharCount(style, styledText, width, ellipsisWidth);
+				boolean complete = count == length;
+				if (complete) { // quit early, we've used all the text
+					lines.add(styledText.immutableCopy());
+					return lines;
+				}
+				int i = text.lastIndexOf(' ', count - 1);
+				if (i != -1) { // there's a space to split on
+					count = i;
+				}
+				lines.add(styledText.copyRange(0, count).immutableCopy());
+				while (text.charAt(count) == ' ') count++;
+				styledText = styledText.copyRange(count, length);
 			}
 		}
 		return lines;

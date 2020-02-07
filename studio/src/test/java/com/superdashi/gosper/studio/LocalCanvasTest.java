@@ -549,10 +549,10 @@ public class LocalCanvasTest extends RenderTest {
 				.color(Argb.CYAN).intOps().fillRect(IntRect.rectangle(width - ellipsisWidth, y, ellipsisWidth, fontMetrics.lineHeight)).canvas()
 				.color(Argb.WHITE);
 			int length = st.length();
-			int count = typeMetrics.accommodatedCharCount(st, width, ellipsisWidth);
+			int count = typeMetrics.accommodatedCharCount(Style.noStyle(), st, width, ellipsisWidth);
 			StyledText st2 = st.mutableCopy();
 			st2.root().deleteText(count, length);
-			text.renderText(st2).moveBy(0, fontMetrics.lineHeight);
+			text.renderText(Style.noStyle(), st2).moveBy(0, fontMetrics.lineHeight);
 		}
 		return surface;
 	}
@@ -564,7 +564,7 @@ public class LocalCanvasTest extends RenderTest {
 		Typeface typeface = Typeface.ezo();
 		IntTextOps ops = canvas.intOps().newText(typeface);
 		int y = typeface.metrics().fontMetrics(TextStyle.regular()).baseline;
-		ops.moveTo(2, y).renderText(sampleStyledText());
+		ops.moveTo(2, y).renderText(Style.noStyle(), sampleStyledText());
 		recordResult(surface, "ezoStyledText");
 	}
 
@@ -575,7 +575,7 @@ public class LocalCanvasTest extends RenderTest {
 		Typeface typeface = testTypeface(20f);
 		IntTextOps ops = canvas.intOps().newText(typeface);
 		int y = typeface.metrics().fontMetrics(TextStyle.regular()).baseline;
-		ops.moveTo(2, y).renderText(sampleStyledText());
+		ops.moveTo(2, y).renderText(Style.noStyle(), sampleStyledText());
 		recordResult(surface, "fontStyledText");
 	}
 

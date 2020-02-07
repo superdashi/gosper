@@ -49,6 +49,10 @@ public final class StyledText implements Mutability<StyledText> {
 		if (id.isEmpty()) throw new IllegalArgumentException("empty id");
 	}
 
+	private static void checkFromTo(int from, int to) {
+		if (from > to) throw new IllegalArgumentException("from exceeds to");
+	}
+
 	private static <T> Stream<T> asStream(Iterator<T> iterator) {
 		return StreamSupport.stream(
 				Spliterators.spliteratorUnknownSize(
@@ -100,6 +104,15 @@ public final class StyledText implements Mutability<StyledText> {
 			fixed = that.fixed == null ? that.flexible.toString() : that.fixed;
 			root = clone(null, that.root);
 		}
+	}
+
+	// for creating ranged copies
+	private StyledText(StyledText that, int from, int to) {
+		this.mutable = true;
+		this.view = false;
+		this.fixed = null;
+		this.flexible = new StringBuilder( (that.fixed == null ? that.flexible : that.fixed).subSequence(from, to) );
+		this.root = rangedClone(null, that.root, from, to).get(); // range must overlap
 	}
 
 	// accessors
@@ -196,6 +209,15 @@ public final class StyledText implements Mutability<StyledText> {
 		return asStream( new SpanIterator(immutable().root) );
 	}
 
+	public StyledText copyRange(int from, int to) {
+		checkIndex(from);
+		checkIndex(to);
+		checkFromTo(from, to);
+		return from == 0 && to == length() ?
+				new StyledText(this, true, false) :
+				new StyledText(this, from, to);
+	}
+
 	// mutability methods
 
 	@Override
@@ -264,6 +286,15 @@ public final class StyledText implements Mutability<StyledText> {
 			clone.children.add(clone(clone, child));
 		}
 		return clone;
+	}
+
+	private Optional<Span> rangedClone(Span parent, Span span, int from, int to) {
+		if (span.from > to || span.to < from) return Optional.empty();
+		Span clone = new Span(parent, span.style, span.id, Math.max(from, span.from) - from, Math.min(to, span.to) - from);
+		for (Span child : span.children) {
+			rangedClone(clone, child, from, to).ifPresent(clone.children::add);
+		}
+		return Optional.of(clone);
 	}
 
 	private void insertTextImpl(int index, String text, Span within) {
@@ -408,7 +439,7 @@ public final class StyledText implements Mutability<StyledText> {
 		}
 
 		public void deleteText(int from, int to) {
-			if (from > to) throw new IllegalArgumentException("from exceeds to");
+			checkFromTo(from, to);
 			from = checkedIndex(from);
 			to = checkedIndex(to);
 			checkValid();
@@ -490,7 +521,7 @@ public final class StyledText implements Mutability<StyledText> {
 
 		private List<Span> applyStyleImpl(Style style, String id, int from, int to) {
 			if (style == null) throw new IllegalArgumentException("null style");
-			if (from > to) throw new IllegalArgumentException("from exceeds to");
+			checkFromTo(from, to);
 			checkValid();
 			checkMutable();
 			from = checkedIndex(from);

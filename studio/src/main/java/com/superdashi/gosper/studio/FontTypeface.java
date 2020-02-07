@@ -117,10 +117,10 @@ final class FontTypeface extends Typeface {
 	}
 
 	//TODO look at possibility of caching these?
-	private AttributedString convert(StyledText text) {
+	private AttributedString convert(Style style, StyledText text) {
 		AttributedString str = new AttributedString(text.root().text());
 		str.addAttribute(TextAttribute.FONT, regularFont);
-		for (Segment segment : text.segments()) {
+		for (Segment segment : text.segments(style)) {
 			str.addAttributes(attributes(segment.style), segment.from, segment.to);
 		}
 		return str;
@@ -199,16 +199,16 @@ final class FontTypeface extends Typeface {
 		}
 
 		@Override
-		public void renderText(int x, int y, StyledText text) {
-			AttributedString as = convert(text);
+		public void renderText(int x, int y, Style style, StyledText text) {
+			AttributedString as = convert(style, text);
 			canvas.doGraphics(g -> {
 				g.drawString(as.getIterator(), x, y);
 			});
 		}
 
 		@Override
-		public void renderText(float x, float y, StyledText text) {
-			AttributedString as = convert(text);
+		public void renderText(float x, float y, Style style, StyledText text) {
+			AttributedString as = convert(style, text);
 			canvas.doGraphics(g -> {
 				g.drawString(as.getIterator(), x, y);
 			});
@@ -257,8 +257,8 @@ final class FontTypeface extends Typeface {
 		}
 
 		@Override
-		public int accommodatedCharCount(StyledText text, int width, int ellipsisWidth) {
-			AttributedString as = convert(text);
+		public int accommodatedCharCount(Style style, StyledText text, int width, int ellipsisWidth) {
+			AttributedString as = convert(style, text);
 			FontRenderContext frc = fontMetrics(TextStyle.regular()).getFontRenderContext();
 			return accommodatedCharCount(as, text.length(), width, ellipsisWidth, frc);
 		}

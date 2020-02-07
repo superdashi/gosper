@@ -25,6 +25,7 @@ import java.util.Optional;
 import com.superdashi.gosper.color.Argb;
 import com.superdashi.gosper.layout.Position;
 import com.superdashi.gosper.layout.Style;
+import com.superdashi.gosper.layout.StyledText;
 import com.superdashi.gosper.studio.Canvas;
 import com.superdashi.gosper.studio.Frame;
 import com.superdashi.gosper.studio.TextStyle;
@@ -56,6 +57,11 @@ public abstract class Content {
 	public static Content textContent(String text) {
 		if (text == null) throw new IllegalArgumentException("null text");
 		return new TextContent(text);
+	}
+
+	public static Content styledTextContent(StyledText styledText) {
+		if (styledText == null) throw new IllegalArgumentException("null styledText");
+		return new StyledTextContent(styledText.immutable());
 	}
 
 	public static Content badgeContent(ItemModel model) {
@@ -183,6 +189,86 @@ public abstract class Content {
 						}
 						canvas.color(color);
 						text.renderString(textStyle, line);
+						y+= spec.metrics.lineHeight + lineSpace;
+					}
+				}
+			};
+		}
+	}
+
+	private static final class StyledTextContent extends Content {
+
+		private final StyledText styledText;
+
+		StyledTextContent(StyledText styledText) {
+			this.styledText = styledText;
+		}
+
+		@Override
+		SizedContent sizeForWidth(VisualSpec spec, Style style, int width) {
+			return size(spec, style, width, Integer.MAX_VALUE);
+		}
+
+		@Override
+		SizedContent sizeForDimensions(VisualSpec spec, Style style, IntDimensions dimensions) {
+			return size(spec, style, dimensions.width, dimensions.height);
+		}
+
+		private SizedContent size(VisualSpec spec, Style style, int width, int height) {
+			// compute number of lines
+			//TODO typeface should be configurable from style
+			Typeface typeface = spec.typeface;
+			TextStyle textStyle = TextStyle.fromStyle(style);
+			boolean outline = style.textOutline() != 0; // we have to do outlining ourselves
+			int lineLimit = style.lineLimit();
+			int lineLength = outline ? width - 2 : width;
+
+			List<StyledText> lines = spec.splitIntoLines(typeface, style, styledText, lineLength, lineLimit);
+			int lineCount = Math.min(lines.size(), lineLimit);
+			if (lineCount < lines.size()) {
+				lines.subList(lineCount, lines.size()).clear();
+				int lastIndex = lineCount - 1;
+				StyledText lastLine = lines.get(lastIndex).mutable();
+				lastLine.appendText(spec.theme.ellipsisString);
+				lines.set(lastIndex, lastLine);
+			}
+			// obtain line height
+			int lineHeight = spec.metrics.lineHeight;
+			int textHeight =
+					lineHeight * lineCount +               // line heights
+					style.lineSpace() * (lineCount - 1);   // line spaces
+			height = Math.min(height, textHeight);
+			// assemble and return
+			IntDimensions dimensions = IntDimensions.of(width, height);
+			return new SizedContent() {
+				@Override
+				public IntDimensions dimensions() {
+					return dimensions;
+				}
+
+				@Override
+				public void render(Canvas canvas, IntRect contentArea) {
+					int color = style.colorFg();
+					int olColor = Argb.WHITE; //TODO how to compute this?
+					IntTextOps text = canvas.intOps().newText(typeface);
+					int baseline = typeface.metrics().fontMetrics(textStyle).baseline;
+					int x = outline ? contentArea.minX + 1 : contentArea.minX;
+					int y = contentArea.minY + baseline;
+					int lineSpace = style.lineSpace();
+					for (StyledText line : lines) {
+						text.moveTo(x, y);
+						if (outline) {
+							//TODO YUCK!
+							canvas.color(olColor);
+							text
+									.moveBy( 1,  0).renderText(style, line)
+									.moveBy(-2,  0).renderText(style, line)
+									.moveBy( 1,  1).renderText(style, line)
+									.moveBy( 0, -2).renderText(style, line)
+									.moveBy( 0,  1);
+						}
+						canvas.color(color);
+						text.renderText(style, line);
 						y+= spec.metrics.lineHeight + lineSpace;
 					}
 				}

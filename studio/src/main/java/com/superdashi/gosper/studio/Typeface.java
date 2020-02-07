@@ -18,6 +18,7 @@ package com.superdashi.gosper.studio;
 
 import java.awt.Font;
 
+import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
 import com.tomgibara.streams.Streams;
 
@@ -104,11 +105,11 @@ public abstract class Typeface {
 		default void renderString(int x,   int   y,                  String str) { renderString(x, y, TextStyle.regular(), str); }
 		default void renderString(float x, float y,                  String str) { renderString(x, y, TextStyle.regular(), str); }
 
-		default void renderString(int   x, int   y, TextStyle style, String str) { renderText  (x, y, new StyledText(style.asStyle(), str) ); }
-		default void renderString(float x, float y, TextStyle style, String str) { renderText  (x, y, new StyledText(style.asStyle(), str) ); }
+		default void renderString(int   x, int   y, TextStyle style, String str) { renderText  (x, y, style.asStyle(), new StyledText(str) ); }
+		default void renderString(float x, float y, TextStyle style, String str) { renderText  (x, y, style.asStyle(), new StyledText(str) ); }
 
-		void renderText(int   x, int   y, StyledText text);
-		void renderText(float x, float y, StyledText text);
+		void renderText(int   x, int   y, Style style, StyledText text);
+		void renderText(float x, float y, Style style, StyledText text);
 
 	}
 
@@ -119,7 +120,7 @@ public abstract class Typeface {
 		//FloatFontMetrics floatMetrics(TextStyle style);
 
 		int accommodatedCharCount(TextStyle style, String str, int width, int ellipsisWidth);
-		int accommodatedCharCount(StyledText text, int width, int ellipsisWidth);
+		int accommodatedCharCount(Style style, StyledText text, int width, int ellipsisWidth);
 
 		int intRenderedWidthOfString(TextStyle style, String str);
 		//TODO want a method for styled text too

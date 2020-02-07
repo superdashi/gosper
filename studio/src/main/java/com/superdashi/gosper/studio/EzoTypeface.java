@@ -127,10 +127,10 @@ final class EzoTypeface extends Typeface {
 		}
 
 		@Override
-		public void renderText(int x, int y, StyledText text) {
+		public void renderText(int x, int y, Style style, StyledText text) {
 			//TODO is there a more efficient way of handling color changes?
 			State state = null;
-			for (Segment segment : text.segments()) {
+			for (Segment segment : text.segments(style)) {
 				int color = segment.style.colorFg();
 				if (color != 0) {
 					Canvas canvas = ops.canvas();
@@ -151,8 +151,8 @@ final class EzoTypeface extends Typeface {
 		}
 
 		@Override
-		public void renderText(float x, float y, StyledText text) {
-			renderText(round(x), round(y), text);
+		public void renderText(float x, float y, Style style, StyledText text) {
+			renderText(round(x), round(y), style, text);
 		}
 
 		private Renderer renderer(TextStyle style) {
@@ -181,8 +181,8 @@ final class EzoTypeface extends Typeface {
 		}
 
 		@Override
-		public int accommodatedCharCount(StyledText text, int width, int ellipsisWidth) {
-			List<Segment> segments = text.segmentStream().collect(Collectors.toList());
+		public int accommodatedCharCount(Style style, StyledText text, int width, int ellipsisWidth) {
+			List<Segment> segments = text.segmentStream(style).collect(Collectors.toList());
 			int count = accommodatedCharCount(segments, width);
 			if (count == text.length()) return count;
 			return accommodatedCharCount(segments, width - ellipsisWidth);
