@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.tomgibara.bits.BitStore;
 import com.tomgibara.bits.BitStore.BitMatches;
@@ -40,6 +41,12 @@ public final class Logger {
 	private static final int ORD_DEBUG   = 3;
 
 	private static final Pattern LINE_SPLITTER = Pattern.compile("\\r?\\n");
+
+	private static String valueToString(Object value) {
+		if (value == null) return "null";
+		if (value.getClass().isArray()) return Stores.values(value).toString();
+		return value.toString();
+	}
 
 	private static List<String> convert(Throwable stacktrace) {
 		if (stacktrace == null) return null;
@@ -180,6 +187,7 @@ public final class Logger {
 			return this;
 		}
 
+		//TODO can defer substitution?
 		public boolean log() {
 			// check if this is already rejected
 			if (this == noLogging) return false;
@@ -188,8 +196,12 @@ public final class Logger {
 			// convert the stacktrace
 			entry.stacktrace = convert(stacktrace);
 			// substitute values into message if necessary
-			if (values != null && values.length != 0 && entry.message != null) {
-				entry.message = new Sub(entry.message).apply(values);
+			if (values != null && values.length != 0) {
+				if (entry.message == null) {
+					entry.message = Arrays.stream(values).map(Logger::valueToString).collect(Collectors.joining(" "));
+				} else {
+					entry.message = new Sub(entry.message).apply(values);
+				}
 			}
 			return logQueue.add(entry);
 		}
@@ -300,16 +312,7 @@ public final class Logger {
 					from += sub & 7;
 					int i = sub >> 3;
 					if (i < length) {
-						Object value = values[i];
-						String str;
-						if (value == null) {
-							str = "null";
-						} else if (value.getClass().isArray()) {
-							str = Stores.values(value).toString();
-						} else {
-							str = value.toString();
-						}
-						sb.append(str);
+						sb.append(valueToString(values[i]));
 					}
 				}
 			}
