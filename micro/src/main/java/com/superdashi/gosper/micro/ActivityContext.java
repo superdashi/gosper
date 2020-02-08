@@ -61,7 +61,9 @@ public class ActivityContext {
 	}
 
 	public static ActivityContext current() {
-		return current.get();
+		ActivityContext context = current.get();
+		if (context == null) throw new IllegalStateException("no current activity context");
+		return context;
 	}
 
 	private final ActivityManager manager;
