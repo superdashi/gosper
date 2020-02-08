@@ -124,6 +124,10 @@ public final class Style {
 
 	// accessors
 
+	public boolean isNoStyle() {
+		return this.equals(noStyle);
+	}
+
 	public int colorFg() {
 		return colorFg;
 	}

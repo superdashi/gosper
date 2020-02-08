@@ -166,6 +166,10 @@ public final class StyledText implements Mutability<StyledText> {
 		return root.children.isEmpty();
 	}
 
+	public boolean isUnstyled() {
+		return isSingleSpan() && root.style.isNoStyle();
+	}
+
 	public List<Span> spansWithId(String id) {
 		if (id == null) throw new IllegalArgumentException("null id");
 		List<Span> spans = new ArrayList<>();
