@@ -26,6 +26,7 @@ import com.superdashi.gosper.color.Argb;
 import com.superdashi.gosper.device.Event;
 import com.superdashi.gosper.device.EventMask;
 import com.superdashi.gosper.device.Event.Type;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
 import com.superdashi.gosper.micro.Display.Situation;
@@ -46,7 +47,6 @@ import com.tomgibara.intgeom.IntVector;
 public class Bar extends Component {
 
 	private static final Composer clear = new PorterDuff(PorterDuff.Rule.CLEAR).asComposer();
-	private static final Style boldStyle = new Style().textWeight(1).immutable();
 	private static final Object buttonInd = new Object();
 
 	// set in constructor
@@ -65,8 +65,7 @@ public class Bar extends Component {
 	private Frame buttonFrameFocused;
 	private Object focused; // set to the bounds if focused - in future, might be settable to indicators
 
-	private String boldText = "";
-	private String plainText = "";
+	private ItemModel model;
 
 	private boolean maskDirty = true; // if the mask has changed (often caused by new indicators)
 	private boolean buttDirty = false; // if button has change (eg from focusing)
@@ -129,18 +128,31 @@ public class Bar extends Component {
 		}
 	}
 
-	public void setBoldText(String boldText) {
-		if (boldText == null) throw new IllegalArgumentException("null boldText");
-		if (boldText.equals(this.boldText)) return;
-		this.boldText = boldText;
-		textDirty = true;
+	public ItemModel model() {
+		return model;
 	}
 
-	public void setPlainText(String plainText) {
-		if (plainText == null) throw new IllegalArgumentException("null plainText");
-		if (plainText.equals(this.plainText)) return;
-		this.plainText = plainText;
-		textDirty = true;
+	public void model(ItemModel model) {
+		if (model == null) throw new IllegalArgumentException("null model");
+		if (model == this.model) return;
+		this.model = model;
+		this.textDirty = true;
+		if (situation != null) {
+			situation.requestRedrawNow();
+		}
+	}
+
+	// convenience method
+	public ItemModel item(Item item) {
+		if (item == null) throw new IllegalArgumentException("null item");
+		ItemModel model = situation.models().itemModel(item);
+		model(model);
+		return model;
+	}
+
+	// convenience method
+	public Item item() {
+		return model == null ? null : model.item;
 	}
 
 	// component methods
@@ -227,26 +239,29 @@ public class Bar extends Component {
 			}
 			int limit = separatorX() - spec.metrics.sideMargin;
 			canvas.color(spec.theme.barBgColor).intOps().fillRect(IntRect.bounded(x, 0, limit, spec.metrics.barHeight));
-			boolean hasBoldText = !boldText.isEmpty();
-			boolean hasPlainText = !plainText.isEmpty();
-			if (hasBoldText || hasPlainText) {
-				StyledText text = new StyledText();
-				if (hasBoldText) text.appendStyledText(boldStyle, boldText);
-				if (hasPlainText) text.appendText(plainText);
+
+			String text = model == null ? "" : model.label();
+			if (!text.isEmpty()) {
+				StyledText styledText;
+				if (model.commonMarkProperties().contains("label")) {
+					styledText = situation.commonMark().parseAsStyledText(text);
+				} else {
+					styledText = new StyledText(text);
+				}
 
 				IntTextOps ops = canvas.intOps().newText(spec.typeface);
 				TypefaceMetrics typeMetrics = spec.typeMetrics;
 				int ey = spec.metrics.barHeight - spec.metrics.barBaselineGap;
 				int ex = x;
 				//TODO small loss of fidelity here, bold overflow would have given a bold ellipsis
-				int count = typeMetrics.accommodatedCharCount(Style.noStyle(), text, limit - x, spec.ellipsisWidth(TextStyle.regular()));
-				boolean renderEllipsis = count < text.length();
+				int count = typeMetrics.accommodatedCharCount(Style.noStyle(), styledText, limit - x, spec.ellipsisWidth(TextStyle.regular()));
+				boolean renderEllipsis = count < styledText.length();
 				if (renderEllipsis) {
-					text.truncateText(count);
-					text.appendText(spec.theme.ellipsisString);
+					styledText.truncateText(count);
+					styledText.appendText(spec.theme.ellipsisString);
 				}
 				canvas.color(spec.theme.barTextColor);
-				ops.moveTo(ex, ey).renderText(Style.noStyle(), text);
+				ops.moveTo(ex, ey).renderText(Style.noStyle(), styledText);
 			}
 			textDirty = false;
 		}

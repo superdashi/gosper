@@ -17,6 +17,7 @@
 package com.superdashi.gosper.micro;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +31,46 @@ import com.superdashi.gosper.studio.PorterDuff.Rule;
 //TODO address synchronization
 public final class ItemModel extends Model {
 
+	static final String PROPERTY_COMMON_MARK = "gosper:common_mark";
+
+	private static List<String> toPropertyNameList(String str) {
+		if (str.isEmpty()) return Collections.emptyList();
+		List<String> list = null;
+		int start = -1;
+		int end = -1;
+		for (int i = 0; i < str.length(); i++) {
+			char c = str.charAt(i);
+			if (Character.isWhitespace(c)) continue;
+			if (start == -1) { // we're looking for the start of the name
+				if (c != ',') { // we ignore a leading comma: since an empty string cannot be a property name
+					start = i;
+				}
+			} else { // we're looking for the end of the name
+				if (c ==',') {
+					if (end != -1) { // again, ignore case of empty name
+						if (list == null) list = new ArrayList<>();
+						list.add(str.substring(start, end + 1));
+						end = -1;
+					}
+					start = -1;
+				} else {
+					end = i;
+				}
+			}
+		}
+		if (start != -1 && end != -1) {
+			String last = str.substring(start, end + 1);
+			if (list == null) {
+				list = Collections.singletonList(last);
+			} else {
+				list.add(last);
+			}
+		} else if (list == null) {
+			list = Collections.emptyList();
+		}
+		return list;
+	}
+
 	final Item item;
 	final Mutations mutations;
 	private String label = null;
@@ -38,6 +79,9 @@ public final class ItemModel extends Model {
 	private Frame disabledIcon = null;
 	private Frame badge = null;
 	private Frame symbol = null;
+
+	// computed lazily
+	private List<String> commonMarkProperties = null;
 
 	private int outstanding = 0;
 	private List<ItemModel> copies = null;
@@ -125,6 +169,14 @@ public final class ItemModel extends Model {
 
 	Optional<Frame> symbol() {
 		return Optional.ofNullable(symbol);
+	}
+
+	List<String> commonMarkProperties() {
+		if (commonMarkProperties == null) {
+			String properties = item.value(PROPERTY_COMMON_MARK).optionalString().orElse("");
+			commonMarkProperties = toPropertyNameList(properties);
+		}
+		return commonMarkProperties;
 	}
 
 	// object methods

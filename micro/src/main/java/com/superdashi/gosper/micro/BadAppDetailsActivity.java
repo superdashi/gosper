@@ -17,6 +17,7 @@
 package com.superdashi.gosper.micro;
 
 import com.superdashi.gosper.item.Flavor;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.layout.Style;
 
 class BadAppDetailsActivity implements Activity {
@@ -33,8 +34,7 @@ class BadAppDetailsActivity implements Activity {
 	public void open(DataInput savedState) {
 		ActivityContext context = ActivityContext.current();
 		Display display = context.configureDisplay().flavor(Flavor.ERROR).layoutDisplay(Layout.single());
-		Bar bar = display.bar().get();
-		bar.setPlainText("Failed application launch");
+		display.bar().get().item(Item.fromLabel("Failed application launch"));
 		Document document = display.addDocument(Location.center);
 
 		DocumentModel docModel = context.models().documentModel();

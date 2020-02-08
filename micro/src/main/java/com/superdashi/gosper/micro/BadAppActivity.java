@@ -18,6 +18,7 @@ package com.superdashi.gosper.micro;
 
 import com.superdashi.gosper.device.Event;
 import com.superdashi.gosper.item.Flavor;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.layout.Alignment;
 import com.superdashi.gosper.layout.Alignment2D;
 import com.superdashi.gosper.layout.Position;
@@ -47,8 +48,7 @@ class BadAppActivity implements Activity {
 	@Override
 	public void open(DataInput savedState) {
 		Display display = context.configureDisplay().flavor(Flavor.ERROR).layoutDisplay(Layout.single());
-		Bar bar = display.bar().get();
-		bar.setPlainText("Application failed to launch");
+		display.bar().get().item(Item.fromLabel("Application failed to launch"));
 
 		CardDesign design = new CardDesign(Position.from(Fit.FREE, Fit.FREE, Alignment2D.pair(Alignment.MID, Alignment.MIN)));
 		Card card = display.addCard(Location.center);

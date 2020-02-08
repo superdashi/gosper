@@ -55,9 +55,9 @@ class SelectActivity implements Activity {
 	public void open(DataInput savedState) {
 		Display display = context.configureDisplay().flavor(Flavor.INPUT).hasTopBar(true).hasScrollbar(true).layoutDisplay(Layout.single());
 		// populate bar
-		String barText = info.label().orElse("Select");
+		Item item = info.label().isPresent() ? info : Item.newBuilder().label("Select").build();
 		//TODO should bar contents be set directly via display?
-		display.bar().get().setPlainText(barText);
+		display.bar().get().item(item);
 		// populate table
 		Table table = display.addTable(Location.center, new DisplayColumns(true, true));
 		TableModel model = context.models().tableModel(Rows.fixedActionRows(true, true, options));

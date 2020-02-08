@@ -148,7 +148,8 @@ public final class Display {
 
 		if (config.hasTopBar) {
 			Bar component = new Bar(!keyboard.keySet.containsKey(Event.KEY_CANCEL));
-			component.setPlainText(activityContext.activityItem().label().orElse(""));
+			// cannot simply set as model below, because bar not yet situated
+			component.model( activityContext.models().itemModel( activityContext.activityItem() ) );
 			bar = new Situation(this, component, Location.topbar, style);
 			situations.add(bar);
 			Place place = new Place(Location.topbar, bounds.resized(IntDir.MORE_Y, spec.metrics.barHeight), style);
@@ -846,9 +847,14 @@ public final class Display {
 			return display.activityContext.activities();
 		}
 
-		//used for restricting some component methods to the active state
+		// used for restricting some component methods to the active state
 		boolean isActive() {
 			return display.activityContext.active;
+		}
+
+		// way for components to style text via markdown
+		CommonMark commonMark() {
+			return display.commonMark();
 		}
 
 		// render resource methods
