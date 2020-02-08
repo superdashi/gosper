@@ -128,33 +128,6 @@ public class Bar extends Component {
 		}
 	}
 
-	public ItemModel model() {
-		return model;
-	}
-
-	public void model(ItemModel model) {
-		if (model == null) throw new IllegalArgumentException("null model");
-		if (model == this.model) return;
-		this.model = model;
-		this.textDirty = true;
-		if (situation != null) {
-			situation.requestRedrawNow();
-		}
-	}
-
-	// convenience method
-	public ItemModel item(Item item) {
-		if (item == null) throw new IllegalArgumentException("null item");
-		ItemModel model = situation.models().itemModel(item);
-		model(model);
-		return model;
-	}
-
-	// convenience method
-	public Item item() {
-		return model == null ? null : model.item;
-	}
-
 	// component methods
 
 	@Override
@@ -302,6 +275,33 @@ public class Bar extends Component {
 	@Override
 	Optional<Pointing> pointing() {
 		return Optional.ofNullable(pointing);
+	}
+
+	// package scoped accessors
+
+	ItemModel model() {
+		return model;
+	}
+
+	void model(ItemModel model) {
+		if (model == null) throw new IllegalArgumentException("null model");
+		if (model == this.model) return;
+		this.model = model;
+		this.textDirty = true;
+		situation.requestRedrawNow();
+	}
+
+	// convenience method
+	ItemModel item(Item item) {
+		if (item == null) throw new IllegalArgumentException("null item");
+		ItemModel model = situation.models().itemModel(item);
+		model(model);
+		return model;
+	}
+
+	// convenience method
+	Item item() {
+		return model == null ? null : model.item;
 	}
 
 	// package scoped methods

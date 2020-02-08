@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,6 +33,7 @@ import com.superdashi.gosper.device.DeviceSpec;
 import com.superdashi.gosper.device.Event;
 import com.superdashi.gosper.device.Keyboard;
 import com.superdashi.gosper.device.Screen;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.micro.Component.Changes;
 import com.superdashi.gosper.micro.Component.Eventing;
@@ -96,6 +98,7 @@ public final class Display {
 	private final ActivityContext activityContext;
 	private final List<Situation> situations = new ArrayList<>();
 	private final Map<Location, Situation> locations;
+	private final String[] activityItemInterpolate;
 	private final ScriptSession scriptSession;
 
 	//state only required until finished
@@ -105,6 +108,8 @@ public final class Display {
 	private Situation bar;
 	private Situation scrollbar;
 
+	// records the item that provides specific context to the activity (optional)
+	private Item contextItem = null;
 	private ActionsModel actions = ActionsModel.none();
 	// records the current action selected by the user
 	private final ActionModel selectedAction;
@@ -139,6 +144,7 @@ public final class Display {
 		this.spec = spec;
 		this.activityContext = activityContext;
 		this.scriptSession = scriptSession;
+		this.activityItemInterpolate = ItemModel.interpolatePropertiesFor(activityContext.activityItem());
 		selectedAction = activityContext.models().actionModel(Action.noAction());
 
 		IntRect bounds = spec.bounds;
@@ -148,9 +154,8 @@ public final class Display {
 
 		if (config.hasTopBar) {
 			Bar component = new Bar(!keyboard.keySet.containsKey(Event.KEY_CANCEL));
-			// cannot simply set as model below, because bar not yet situated
-			component.model( activityContext.models().itemModel( activityContext.activityItem() ) );
 			bar = new Situation(this, component, Location.topbar, style);
+			updateBar();
 			situations.add(bar);
 			Place place = new Place(Location.topbar, bounds.resized(IntDir.MORE_Y, spec.metrics.barHeight), style);
 			bar.place(place, Z_BAR);
@@ -183,6 +188,16 @@ public final class Display {
 
 	public CommonMark commonMark() {
 		return commonMark == null ? commonMark = CommonMark.defaultFor(spec.theme) : commonMark;
+	}
+
+	public Optional<Item> contextItem() {
+		return Optional.ofNullable(contextItem);
+	}
+
+	public void contextItem(Item contextItem) {
+		if (Objects.equals(contextItem, this.contextItem)) return; // nothing to do
+		this.contextItem = contextItem;
+		if (bar != null) updateBar();
 	}
 
 	public void actionsModel(ActionsModel actions) {
@@ -706,6 +721,15 @@ public final class Display {
 			backgroundPane.canvas().drawFrame(background.generate(backgroundPane.bounds()));
 		}
 		return requireComposite;
+	}
+
+	private void updateBar() {
+		Bar bar = (Bar) this.bar.component;
+		Item item = activityContext.activityItem();
+		if (activityItemInterpolate.length != 0 && contextItem != null) {
+			item = item.builder().interpolate(contextItem, activityItemInterpolate).build();
+		}
+		bar.item(item);
 	}
 
 	// static classes

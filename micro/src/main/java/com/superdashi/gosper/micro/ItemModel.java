@@ -32,6 +32,7 @@ import com.superdashi.gosper.studio.PorterDuff.Rule;
 public final class ItemModel extends Model {
 
 	static final String PROPERTY_COMMON_MARK = "gosper:common_mark";
+	static final String PROPERTY_INTERPOLATE = "gosper:interpolate";
 
 	private static List<String> toPropertyNameList(String str) {
 		if (str.isEmpty()) return Collections.emptyList();
@@ -71,6 +72,15 @@ public final class ItemModel extends Model {
 		return list;
 	}
 
+	private static String[] propertyNamesFromItem(Item item, String property) {
+		String str = item.value(property).optionalString().orElse("");
+		return toPropertyNameList(str).toArray(new String[0]);
+	}
+
+	static String[] interpolatePropertiesFor(Item item) {
+		return propertyNamesFromItem(item, PROPERTY_INTERPOLATE);
+	}
+
 	final Item item;
 	final Mutations mutations;
 	private String label = null;
@@ -82,6 +92,7 @@ public final class ItemModel extends Model {
 
 	// computed lazily
 	private List<String> commonMarkProperties = null;
+	private List<String> interpolateProperties = null;
 
 	private int outstanding = 0;
 	private List<ItemModel> copies = null;
@@ -177,6 +188,14 @@ public final class ItemModel extends Model {
 			commonMarkProperties = toPropertyNameList(properties);
 		}
 		return commonMarkProperties;
+	}
+
+	List<String> interpolateProperties() {
+		if (interpolateProperties == null) {
+			String properties = item.value(PROPERTY_INTERPOLATE).optionalString().orElse("");
+			interpolateProperties = toPropertyNameList(properties);
+		}
+		return interpolateProperties;
 	}
 
 	// object methods
