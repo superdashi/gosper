@@ -152,7 +152,7 @@ abstract class ItemComponent extends Component {
 		//TODO is this a good choice?
 		int textualColor = situation.visualSpec().theme.textualColor;
 		CardDesign design = new CardDesign(Layout.single().withStyle(new Style().colorFg(textualColor)));
-		return design.setContentsAtLocation(Location.center, ItemContents.label());
+		return design.setContentsAtLocation(Location.center, ItemContents.label()).immutable();
 	}
 
 	IntRect designDimensions(Place place) {
