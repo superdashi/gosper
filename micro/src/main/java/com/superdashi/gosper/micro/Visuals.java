@@ -143,6 +143,7 @@ public final class Visuals {
 	static final String KEY_ACT_COLOR = "key-active-color";
 	static final String CAR_PAS_COLOR = "caret-passive-color";
 	static final String CAR_ACT_COLOR = "caret-active-color";
+	static final String LNK_TXT_COLOR = "link-text-color";
 	static final String BACKGROUND = "background";
 	static final String KBD_BACKGROUND = "keyboard-background";
 	static final String ELLIPSIS_TEXT = "ellipsis-text";
@@ -449,6 +450,7 @@ public final class Visuals {
 					case KEY_ACT_COLOR:
 					case CAR_PAS_COLOR:
 					case CAR_ACT_COLOR:
+					case LNK_TXT_COLOR:
 						map.put(name, Config.ColorConfig.parse(value));
 						break;
 					case ELLIPSIS_TEXT:

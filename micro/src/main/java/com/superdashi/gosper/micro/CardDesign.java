@@ -137,6 +137,16 @@ public final class CardDesign implements Mutability<CardDesign> {
 		return this;
 	}
 
+	ItemContents asItemContents() {
+		return new ItemContents() {
+			@Override
+			public Content contentFrom(ItemModel model) {
+				return Content.cardContent(CardDesign.this, model);
+			}
+		};
+
+	}
+
 	// mutability methods
 
 	@Override

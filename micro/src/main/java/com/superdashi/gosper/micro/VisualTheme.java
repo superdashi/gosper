@@ -58,6 +58,8 @@ public final class VisualTheme extends VisualParams {
 	public final int caretActiveColor;
 	// the color used to render passive caret
 	public final int caretPassiveColor;
+	// the color of text representing a link
+	public final int linkTextColor;
 
 	// other
 
@@ -86,6 +88,7 @@ public final class VisualTheme extends VisualParams {
 		keyActiveColor = Argb.BLACK;
 		caretActiveColor = Argb.BLACK;
 		caretPassiveColor = Argb.BLACK;
+		linkTextColor = Argb.BLACK;
 
 		typefaceName = Visuals.TYPEFACE_EZO;
 
@@ -113,6 +116,7 @@ public final class VisualTheme extends VisualParams {
 		keyActiveColor = extractColor(map, Visuals.KEY_ACT_COLOR);
 		caretActiveColor = extractColor(map, Visuals.CAR_ACT_COLOR);
 		caretPassiveColor = extractColor(map, Visuals.CAR_PAS_COLOR);
+		linkTextColor = extractColor(map, Visuals.LNK_TXT_COLOR);
 		ellipsisString = extract(map, Visuals.ELLIPSIS_TEXT);
 		typefaceName = extract(map, Visuals.TYPEFACE_NAME);
 		background = extract(map, Visuals.BACKGROUND);

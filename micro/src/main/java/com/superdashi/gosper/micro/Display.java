@@ -118,6 +118,9 @@ public final class Display {
 
 	private final List<Action> componentActions = new ArrayList<>();
 
+	// lazily created
+	private CommonMark commonMark = null;
+
 	//TODO need a way to defer the background construction so that a place can be supplied
 	Display(Studio studio, SurfacePool surfacePool, Keyboard keyboard, VisualSpec spec, ActivityContext activityContext, DisplayConfiguration config, Layout layout, Background background, ScriptSession scriptSession) {
 		this.studio = studio;
@@ -175,6 +178,10 @@ public final class Display {
 	public List<Location> locations() {
 		//TODO make efficient?
 		return new ArrayList<>(locations.keySet());
+	}
+
+	public CommonMark commonMark() {
+		return commonMark == null ? commonMark = CommonMark.defaultFor(spec.theme) : commonMark;
 	}
 
 	public void actionsModel(ActionsModel actions) {

@@ -1,5 +1,6 @@
 package com.superdashi.gosper.micro;
 
+import com.superdashi.gosper.item.Value;
 import com.superdashi.gosper.layout.Style;
 import com.superdashi.gosper.layout.StyledText;
 import com.superdashi.gosper.layout.StyledText.Span;
@@ -27,6 +28,12 @@ public final class CommonMark {
         defaultStyles.put(Key.EMPHASIS, STYLE_EMPHASIS);
         defaultStyles.put(Key.LINK    , STYLE_LINK);
         defaultStyles.put(Key.STRONG  , STYLE_STRONG);
+    }
+
+    static CommonMark defaultFor(VisualTheme theme) {
+        EnumMap<Key, Style> styles = new EnumMap<>(defaultStyles);
+        styles.put(Key.LINK, STYLE_LINK.mutable().colorFg(theme.linkTextColor).immutable());
+        return new CommonMark(styles);
     }
 
     public enum Key {
@@ -61,11 +68,6 @@ public final class CommonMark {
         }
     }
 
-    // TODO include metrics?
-    public static CommonMark defaultFor(VisualTheme theme) {
-        return new CommonMark(defaultStyles);
-    }
-
     public static Builder newBuilder() {
         return new Builder(new EnumMap<>(Key.class));
     }
@@ -92,6 +94,18 @@ public final class CommonMark {
     public StyledText parseAsStyledText(String commonmark) {
         if (commonmark == null) throw new IllegalArgumentException("null commonmark");
         return new StyledTextComposer().process( parser.parse(commonmark) );
+    }
+
+    public ItemContents parsedItemContents(String property) {
+        if (property == null) throw new IllegalArgumentException("null property");
+        return new ItemContents() {
+            @Override
+            public Content contentFrom(ItemModel model) {
+                String text = model.item.value(property).as(Value.Type.STRING).optionalString().orElse("");
+                StyledText styledText = CommonMark.this.parseAsStyledText(text);
+                return Content.styledTextContent(styledText);
+            }
+        };
     }
 
     private class StyledTextComposer {

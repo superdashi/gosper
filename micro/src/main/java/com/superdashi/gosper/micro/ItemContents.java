@@ -51,32 +51,9 @@ public abstract class ItemContents {
 	public static ItemContents symbol()      { return symbol;      }
 	public static ItemContents nil()         { return nil;         }
 
-	public static ItemContents card(CardDesign design) {
-		if (design == null) throw new IllegalArgumentException("null design");
-		return new ItemContents() {
-			@Override
-			public Content contentFrom(ItemModel model) {
-				return Content.cardContent(design, model);
-			}
-		};
-	}
-
-	public static ItemContents commonMark(CommonMark commonMark, String property) {
-		if (commonMark == null) throw new IllegalArgumentException("null commonMark");
-		if (property == null) throw new IllegalArgumentException("null property");
-		return new ItemContents() {
-			@Override
-			public Content contentFrom(ItemModel model) {
-				String text = model.item.value(property).as(Value.Type.STRING).optionalString().orElse("");
-				StyledText styledText = commonMark.parseAsStyledText(text);
-				return Content.styledTextContent(styledText);
-			}
-		};
-	}
-
 	// constructors
 
-	private ItemContents() { }
+	ItemContents() { }
 
 	// methods
 
