@@ -193,6 +193,7 @@ public final class Bundle {
 		Map<String, Details> attrMap = new HashMap<>();
 		Set<String> indexedAttrs = new HashSet<>();
 		Map<String, Value> attrDefaults = new HashMap<>();
+		Map<String, Item> typeTemplates = new HashMap<>();
 
 		for (Entry<String, Item[]> entry : meta.entrySet()) {
 			for (Item item : entry.getValue()) {
@@ -219,6 +220,13 @@ public final class Bundle {
 						logger.error().message("invalid graph type name: {}").values(name).log();
 					} else {
 						typeMap.put(name, details);
+						typeTemplates.put(name, item.builder()
+								.set(PROPERTY_NAME, null)
+								.set(PROPERTY_TYPE, null)
+								.set(PROPERTY_KIND, null)
+								.set(PROPERTY_ROLE, null)
+								.build()
+						);
 					}
 					continue;
 				}
@@ -293,8 +301,8 @@ public final class Bundle {
 
 		{
 			Builder builder = Viewer.createBuilder(appDetails.identity());
-			typeMap.forEach((n,t) -> {
-				builder.addTypeName(n);
+			typeMap.keySet().forEach(n -> {
+				builder.addType(n, typeTemplates.get(n));
 			});
 			//TODO inefficient, since it has to map type back again
 			attrMap.forEach((n,d) -> {

@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import com.superdashi.gosper.framework.Identity;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.item.Value;
 
 //TODO could reuse flags of data?
@@ -124,14 +125,18 @@ public abstract class Part implements Comparable<Part> {
 		return selector.matches(this);
 	}
 
-	public abstract boolean isNode();
-	public abstract boolean isEdge();
-
 	public abstract void delete();
 
 	public boolean deleted() {
 		return data.isFlagged(PartData.FLAG_DELETED);
 	}
+
+	public Item asItem() {
+		return attrs().itemizeWith( visit.space.itemizer(type()) );
+	}
+
+	public abstract boolean isNode();
+	public abstract boolean isEdge();
 
 	// comparable methods
 

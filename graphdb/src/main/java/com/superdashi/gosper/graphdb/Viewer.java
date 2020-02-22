@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,6 +33,7 @@ import java.util.TreeSet;
 
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.item.Value;
 import com.tomgibara.collect.Collect;
 import com.tomgibara.collect.EquivalenceMap;
@@ -40,6 +42,9 @@ import com.tomgibara.collect.Collect.Sets;
 
 // frames a view
 public final class Viewer {
+
+	public static final String TYPE_NAME_PROPERTY = "gosper:name";
+	public static final String TYPE_INTERPOLATE_PROPERTY = "gosper:interpolate";
 
 	private static final Sets<String> stringSets = Collect.setsOf(String.class);
 	private static final Sets<Namespace> namespaceSets = Collect.setsOf(Namespace.class);
@@ -63,7 +68,7 @@ public final class Viewer {
 
 	public static class Builder {
 		private final Identity identity;
-		private Set<String> typeNames = new HashSet<>();
+		private SortedMap<String, Item> types = new TreeMap<>();
 		private Map<String, Attribute> attributes = new HashMap<>();
 		private Set<String> declaredPermissionNames = new HashSet<>();
 		private SortedSet<Identity> grantedPermissions = new TreeSet<>(PERM_COMP); // nullification indicates all permissions granted
@@ -74,11 +79,18 @@ public final class Viewer {
 			this.identity = identity;
 		}
 
-		public Builder addTypeName(String typeName) {
-			if (typeName == null) throw new IllegalArgumentException("null typeName");
-			//TODO need to validate type name
-			typeNames.add(typeName);
+		public Builder addType(String name) {
+			Type.checkTypeName(name);
+			types.put(name, Item.nothing());
 			return this;
+		}
+
+		public Builder addType(String name, Item template) {
+			Type.checkTypeName(name);
+			if (template == null) throw new IllegalArgumentException("null template");
+			types.put(name, template);
+			return this;
+
 		}
 
 		public Builder addAttribute(String name, Value.Type type, Value value, boolean indexed) {
@@ -164,6 +176,8 @@ public final class Viewer {
 	public final Namespace namespace;
 	// list of type names
 	public final List<String> typeNames;
+	// map of types to their template items
+	public final Map<String, Item> typeItems;
 	// those attributes that are typed
 	public final Map<String, Attribute> typedAttrs;
 	// those attributes that are defaulted
@@ -185,8 +199,6 @@ public final class Viewer {
 	private Viewer(Builder builder) {
 		identity = builder.identity;
 		namespace = builder.identity.ns;
-		ArrayList<String> typeNames = new ArrayList<>(builder.typeNames);
-		typeNames.sort(null);
 		SortedMap<String, Attribute> typedAttrs = new TreeMap<>();
 		SortedMap<String, Attribute> defaultedAttrs = new TreeMap<>();
 		SortedMap<String, Attribute> indexedAttrs = new TreeMap<>();
@@ -224,7 +236,8 @@ public final class Viewer {
 			}
 		}
 
-		this.typeNames = Collections.unmodifiableList(typeNames);
+		this.typeNames = Collections.unmodifiableList(new ArrayList<>(builder.types.keySet()));
+		this.typeItems = Collections.unmodifiableMap(new LinkedHashMap<>(builder.types));
 		this.typedAttrs = Collections.unmodifiableMap(typedAttrs);
 		this.defaultedAttrs = Collections.unmodifiableMap(defaultedAttrs);
 		this.indexedAttrs = Collections.unmodifiableMap(indexedAttrs);

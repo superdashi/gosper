@@ -22,10 +22,6 @@ import java.nio.file.Path;
 
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
-import com.superdashi.gosper.graphdb.Edit;
-import com.superdashi.gosper.graphdb.Space;
-import com.superdashi.gosper.graphdb.Store;
-import com.superdashi.gosper.graphdb.Viewer;
 
 public class AddSpeed {
 
@@ -37,7 +33,7 @@ public class AddSpeed {
 		//Store store = Store.newMemStore();
 		Store store = Store.fileStore(path);
 		Space space = new Space(store);
-		Viewer viewer = Viewer.createBuilder(id).addTypeName("Node").build();
+		Viewer viewer = Viewer.createBuilder(id).addType("Node").build();
 		space.associate(viewer);
 		space.open();
 

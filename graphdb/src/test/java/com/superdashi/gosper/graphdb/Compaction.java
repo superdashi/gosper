@@ -25,11 +25,6 @@ import org.h2.mvstore.MVStoreTool;
 
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
-import com.superdashi.gosper.graphdb.Edit;
-import com.superdashi.gosper.graphdb.PartRef;
-import com.superdashi.gosper.graphdb.Space;
-import com.superdashi.gosper.graphdb.Store;
-import com.superdashi.gosper.graphdb.Viewer;
 import com.superdashi.gosper.item.Value;
 
 public class Compaction {
@@ -54,7 +49,7 @@ public class Compaction {
 		//Store store = Store.newMemStore();
 		Store store = Store.fileStore(path);
 		Space space = new Space(store);
-		Viewer viewer = Viewer.createBuilder(id).addTypeName("Node").addAttribute("index", Value.Type.INTEGER, Value.empty(), false).build();
+		Viewer viewer = Viewer.createBuilder(id).addType("Node").addAttribute("index", Value.Type.INTEGER, Value.empty(), false).build();
 		space.associate(viewer);
 		space.open();
 

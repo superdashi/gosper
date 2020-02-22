@@ -23,6 +23,7 @@ import java.util.function.BiFunction;
 
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
+import com.superdashi.gosper.item.Item;
 import com.tomgibara.collect.EquivalenceMap;
 import com.tomgibara.fundament.Consumer;
 

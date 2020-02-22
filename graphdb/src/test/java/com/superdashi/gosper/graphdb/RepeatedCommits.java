@@ -18,10 +18,6 @@ package com.superdashi.gosper.graphdb;
 
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.framework.Namespace;
-import com.superdashi.gosper.graphdb.Edit;
-import com.superdashi.gosper.graphdb.Space;
-import com.superdashi.gosper.graphdb.Store;
-import com.superdashi.gosper.graphdb.Viewer;
 
 public class RepeatedCommits {
 
@@ -32,7 +28,7 @@ public class RepeatedCommits {
 		while (true) {
 			Store store = Store.newMemStore();
 			Space space = new Space(store);
-			Viewer viewer = Viewer.createBuilder(id).addTypeName("Node").build();
+			Viewer viewer = Viewer.createBuilder(id).addType("Node").build();
 			space.associate(viewer);
 			space.open();
 

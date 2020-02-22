@@ -34,51 +34,8 @@ public final class ItemModel extends Model {
 	static final String PROPERTY_COMMON_MARK = "gosper:common_mark";
 	static final String PROPERTY_INTERPOLATE = "gosper:interpolate";
 
-	private static List<String> toPropertyNameList(String str) {
-		if (str.isEmpty()) return Collections.emptyList();
-		List<String> list = null;
-		int start = -1;
-		int end = -1;
-		for (int i = 0; i < str.length(); i++) {
-			char c = str.charAt(i);
-			if (Character.isWhitespace(c)) continue;
-			if (start == -1) { // we're looking for the start of the name
-				if (c != ',') { // we ignore a leading comma: since an empty string cannot be a property name
-					start = i;
-				}
-			} else { // we're looking for the end of the name
-				if (c ==',') {
-					if (end != -1) { // again, ignore case of empty name
-						if (list == null) list = new ArrayList<>();
-						list.add(str.substring(start, end + 1));
-						end = -1;
-					}
-					start = -1;
-				} else {
-					end = i;
-				}
-			}
-		}
-		if (start != -1 && end != -1) {
-			String last = str.substring(start, end + 1);
-			if (list == null) {
-				list = Collections.singletonList(last);
-			} else {
-				list.add(last);
-			}
-		} else if (list == null) {
-			list = Collections.emptyList();
-		}
-		return list;
-	}
-
-	private static String[] propertyNamesFromItem(Item item, String property) {
-		String str = item.value(property).optionalString().orElse("");
-		return toPropertyNameList(str).toArray(new String[0]);
-	}
-
 	static String[] interpolatePropertiesFor(Item item) {
-		return propertyNamesFromItem(item, PROPERTY_INTERPOLATE);
+		return item.valueAsPropertyNames(PROPERTY_INTERPOLATE).toArray(new String[0]);
 	}
 
 	final Item item;
@@ -184,16 +141,14 @@ public final class ItemModel extends Model {
 
 	List<String> commonMarkProperties() {
 		if (commonMarkProperties == null) {
-			String properties = item.value(PROPERTY_COMMON_MARK).optionalString().orElse("");
-			commonMarkProperties = toPropertyNameList(properties);
+			commonMarkProperties = item.valueAsPropertyNames(PROPERTY_COMMON_MARK);
 		}
 		return commonMarkProperties;
 	}
 
 	List<String> interpolateProperties() {
 		if (interpolateProperties == null) {
-			String properties = item.value(PROPERTY_INTERPOLATE).optionalString().orElse("");
-			interpolateProperties = toPropertyNameList(properties);
+			interpolateProperties = item.valueAsPropertyNames(PROPERTY_INTERPOLATE);
 		}
 		return interpolateProperties;
 	}

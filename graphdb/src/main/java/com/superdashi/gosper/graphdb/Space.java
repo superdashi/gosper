@@ -16,6 +16,7 @@
  */
 package com.superdashi.gosper.graphdb;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,7 +27,10 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.superdashi.gosper.item.Item;
+import com.tomgibara.collect.EquivalenceMap;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 
@@ -49,6 +53,8 @@ public final class Space {
 	static final int NO_EDGE_ID = -1;
 	static final int NO_NODE_ID = -1;
 	static final int NO_OWNER = -1;
+
+	private static final String[] INTERPOLATE_NONE = {};
 
 	//TODO replace
 	static final String MAP_NAME_META = "meta"       ;
@@ -85,6 +91,7 @@ public final class Space {
 	final Inventory inventory;
 	final Map<Identity, Identity> canonIdentities = new HashMap<>();
 	private final Map<Namespace, Set<Type>> availableTypes = new HashMap<>();
+	private final Map<Type, Itemizer> typeItemizers = new HashMap<>();
 
 	private final Indices indices;
 	private Indices readOnlyIndices;
@@ -135,7 +142,16 @@ public final class Space {
 			Identity identity = viewer.identity;
 			if (viewers.containsKey(identity)) throw new IllegalArgumentException("viewer already supplied for identity: " + identity);
 			canonIdentities.putIfAbsent(identity, identity);
-			// check that the viewer does not redefine existing type
+			Namespace namespace = viewer.namespace;
+			// check that the view does not redefine existing type template
+			for (Entry<String, Item> entry: viewer.typeItems.entrySet()) {
+				Type type = new Type(namespace, entry.getKey());
+				Itemizer itemizer = typeItemizers.get(type);
+				if (itemizer != null && !itemizer.template.agreesWith(entry.getValue())) {
+					throw new IllegalArgumentException("redefines a template property for type named " + entry.getKey());
+				}
+			}
+			// check that the viewer does not redefine existing attribute type
 			for (Attribute a : viewer.typedAttrs.values()) {
 				Value.Type type = types.get(a.name);
 				if (type == null) continue;
@@ -159,11 +175,20 @@ public final class Space {
 			}
 			viewers.put(identity, viewer);
 			inventory.identityNameLookup.record(identity.name);
-			Namespace namespace = viewer.namespace;
 			inventory.namespaceLookup.record(namespace);
 			for (String typeName : viewer.typeNames) {
 				inventory.typeNameLookup.record(typeName);
-			};
+			}
+			for (Entry<String, Item> entry: viewer.typeItems.entrySet()) {
+				Type type = new Type(namespace, entry.getKey());
+				Itemizer itemizer = typeItemizers.get(type);
+				if (itemizer == null) {
+					itemizer = new Itemizer();
+					typeItemizers.put(type, itemizer);
+				}
+				itemizer.mergeTemplate(entry.getValue());
+				itemizer.mergeNsPrefixes(viewer.prefixesByNs);
+			}
 			for (Attribute a : viewer.typedAttrs.values()) {
 				AttrName name = a.name;
 				if (!indexTypes.containsKey(name)) {
@@ -274,6 +299,10 @@ public final class Space {
 		return availableTypes.get(namespace);
 	}
 
+	Itemizer itemizer(Type type) {
+		return typeItemizers.get(type);
+	}
+
 	void flush(List<Change> changes) {
 		if (DUMP_CHANGES) {
 			System.out.println("---- CHANGES START ----");
@@ -355,6 +384,40 @@ public final class Space {
 
 	private void deactivate() {
 		inventory.unlock();
+	}
+
+	static final class Itemizer {
+
+		Item template = Item.nothing();
+		String[] interpolate = INTERPOLATE_NONE;
+		EquivalenceMap<Namespace, String> nsPrefixes;
+
+		private void mergeTemplate(Item plus) {
+			if (template == Item.nothing()) {
+				template = plus;
+			} else if (!plus.matches(template)) {
+				template = template.matches(plus) ? plus : template.builder().addItem(plus).build();
+			}
+			List<String> list = plus.valueAsPropertyNames(Viewer.TYPE_INTERPOLATE_PROPERTY);
+			interpolate = Stream.concat(list.stream(), Arrays.stream(interpolate)).sorted().distinct().toArray(String[]::new);
+		}
+
+		private void mergeNsPrefixes(EquivalenceMap<Namespace, String> nsPrefixes) {
+			if (this.nsPrefixes == null) {
+				this.nsPrefixes = nsPrefixes;
+			} else if (!this.nsPrefixes.keySet().containsAll(nsPrefixes.entrySet())) {
+				this.nsPrefixes = this.nsPrefixes.mutable();
+				nsPrefixes.forEach(this.nsPrefixes::putIfAbsent);
+			}
+		}
+
+		Item itemize(Map<AttrName, Value> map) {
+			Item.Builder builder = template.builder();
+			map.forEach((n,v) -> {
+				builder.addExtra(nsPrefixes.get(n.namespace) + ':' + n.name, v);
+			});
+			return builder.interpolate(interpolate).build();
+		}
 	}
 
 }

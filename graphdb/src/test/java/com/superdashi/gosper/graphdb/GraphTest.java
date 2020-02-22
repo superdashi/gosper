@@ -30,11 +30,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.superdashi.gosper.item.Item;
 import org.h2.mvstore.MVStore;
 import org.h2.mvstore.MVStore.Builder;
 import org.h2.mvstore.OffHeapStore;
@@ -58,12 +60,17 @@ public class GraphTest {
 
 	private static Viewer.Builder stdBuild(Viewer.Builder builder) {
 		return builder
-			.addTypeName("Company")
-			.addTypeName("Person")
-			.addTypeName("Employee")
-			.addTypeName("employs")
-			.addTypeName("likes")
-			.addTypeName("is_employed_by")
+			.addType("Company")
+			.addType("Person")
+			.addType("Employee")
+			.addType("employs")
+			.addType("likes")
+			.addType("Pet", Item.newBuilder()
+					.label("The pet called {v1:name}")
+					.addExtra("gosper:interpolate", Value.ofString("label,v1:also"))
+					.addExtra("v1:also", Value.ofString("Also know that the pet {v1:quirk}"))
+					.build())
+			.addType("is_employed_by")
 			.addAttribute("name", Value.Type.STRING, Value.empty(), false)
 			.addAttribute("count", Value.Type.INTEGER, Value.empty(), false)
 			.addAttribute("index", Value.Type.INTEGER, Value.empty(), true)
@@ -654,8 +661,8 @@ public class GraphTest {
 	@Test
 	public void testRebuildIndex() {
 		Builder mvBuilder = builder(SType.OFF_HEAP);
-		Viewer a = Viewer.createBuilder(id1).addAttribute("rating", Value.Type.STRING, Value.empty(), true).addTypeName("Film").build();
-		Viewer b = Viewer.createBuilder(id1).addAttribute("rating", Value.Type.NUMBER, Value.empty(), true).addTypeName("Film").build();
+		Viewer a = Viewer.createBuilder(id1).addAttribute("rating", Value.Type.STRING, Value.empty(), true).addType("Film").build();
+		Viewer b = Viewer.createBuilder(id1).addAttribute("rating", Value.Type.NUMBER, Value.empty(), true).addType("Film").build();
 		View view = buildView(mvBuilder, id1, a);
 		Edit edit = view.edit();
 		Node filmX = edit.createNode("Film");
@@ -817,6 +824,28 @@ public class GraphTest {
 				);
 	}
 
+	@Test
+	public void testItemization() {
+		runTest(edit -> {
+			{
+				Node node = edit.createNode("Pet");
+				node.attrs().string("name", "Fido");
+				node.attrs().string("quirk", "eats ants");
+				node.tags().add("a");
+			}
+			{
+				Node node = edit.createNode("Pet");
+				node.tags().add("b");
+			}
+		}, inspect -> {
+			BiFunction<String, String, String> valueForTag = (t,p) -> inspect.graph().nodes(Selector.withTag(t)).unique().asItem().value(p).string();
+			//Function<String, String> labelForTag = t -> inspect.graph().nodes(Selector.withTag(t)).unique().asItem().label().get();
+			Assert.assertEquals("The pet called Fido", valueForTag.apply("a", "label"));
+			Assert.assertEquals("The pet called ", valueForTag.apply("b","label"));
+			Assert.assertEquals("Also know that the pet eats ants", valueForTag.apply("a", "v1:also"));
+			Assert.assertEquals("Also know that the pet ", valueForTag.apply("b", "v1:also"));
+		}, id1, stdViewer1);
+	}
 	//@Test
 	public void testLarge() {
 		int cmpCount = 1000;

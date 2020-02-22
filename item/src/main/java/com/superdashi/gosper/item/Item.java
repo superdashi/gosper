@@ -21,8 +21,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import com.tomgibara.collect.Collect;
 import com.tomgibara.collect.EquivalenceMap;
@@ -58,12 +62,51 @@ public final class Item implements Serializable {
 		return (flags & (1 << (FIELD_COUNT - 1 - index))) != 0;
 	}
 
+	private static List<String> toPropertyNameList(String str) {
+		if (str.isEmpty()) return Collections.emptyList();
+		List<String> list = null;
+		int start = -1;
+		int end = -1;
+		for (int i = 0; i < str.length(); i++) {
+			char c = str.charAt(i);
+			if (Character.isWhitespace(c)) continue;
+			if (start == -1) { // we're looking for the start of the name
+				if (c != ',') { // we ignore a leading comma: since an empty string cannot be a property name
+					start = i;
+				}
+			} else { // we're looking for the end of the name
+				if (c ==',') {
+					if (end != -1) { // again, ignore case of empty name
+						if (list == null) list = new ArrayList<>();
+						list.add(str.substring(start, end + 1));
+						end = -1;
+					}
+					start = -1;
+				} else {
+					end = i;
+				}
+			}
+		}
+		if (start != -1 && end != -1) {
+			String last = str.substring(start, end + 1);
+			if (list == null) return Collections.singletonList(last);
+			list.add(last);
+		} else if (list == null) {
+			return Collections.emptyList();
+		}
+		return Collections.unmodifiableList(list);
+	}
+
 	public static Item fromLabel(String label) {
 		return new Item(label, null, null, null, null, null, null, null);
 	}
 
 	public static Item fromPicture(Image picture) {
 		return new Item(null, null, null, picture, null, null, null, null);
+	}
+
+	public static Item fromProperty(String name, Object value) {
+		return newBuilder().set(name, value).build();
 	}
 
 	public static Item nothing() {
@@ -282,8 +325,8 @@ public final class Item implements Serializable {
 						set = s -> description = s;
 						break;
 					default :
-						get = () -> extras.get(property).optionalString().orElse(null);
-						set = s -> extras.put(property, Value.ofString(s) );
+						get = () -> extras().get(property).optionalString().orElse(null);
+						set = s -> extras().put(property, Value.ofString(s) );
 						break;
 				}
 				String string = get.get();
@@ -408,6 +451,10 @@ public final class Item implements Serializable {
 		}
 	}
 
+	public List<String> valueAsPropertyNames(String valueName) {
+		return toPropertyNameList(value(valueName).optionalString().orElse(""));
+	}
+
 	public Qualifier qualifier() {
 		return qualifier;
 	}
@@ -471,6 +518,47 @@ public final class Item implements Serializable {
 		extras.forEach((k,v) -> {
 			w.writeChars(k);
 			v.serialize(w);
+		});
+	}
+
+	// returns true if adding this item to that would have no effect
+	public boolean matches(Item that) {
+		if (that == null) throw new IllegalArgumentException("null that");
+		if (!this.qualifier.matches(that.qualifier)) return false;
+		if (this.label       != null && !this.label      .equals(that.label      )) return false;
+		if (this.description != null && !this.description.equals(that.description)) return false;
+		if (this.icon        != null && !this.icon       .equals(that.icon       )) return false;
+		if (this.picture     != null && !this.picture    .equals(that.picture    )) return false;
+		if (this.ordinal     != null && !this.ordinal    .equals(that.ordinal    )) return false;
+		if (this.created     != null && !this.created    .equals(that.created    )) return false;
+		if (this.modified    != null && !this.modified   .equals(that.modified   )) return false;
+		if (this.priority    != null && !this.priority   .equals(that.priority   )) return false;
+		for (Map.Entry<String, Value> entry : extras.entrySet()) {
+			if (!entry.getValue().equals( that.extras.get(entry.getKey()) )) return false;
+		}
+		return true;
+	}
+
+	// true if qualifiers are the same, and values match where defined
+	// equivalent to this matches that and vice verse
+	public boolean agreesWith(Item that) {
+		if (that == null) throw new IllegalArgumentException("null that");
+		if (!this.qualifier.equals(that.qualifier)) return false;
+
+		if (this.label       != null && that.label       != null && !this.label      .equals(that.label      )) return false;
+		if (this.description != null && that.description != null && !this.description.equals(that.description)) return false;
+		if (this.icon        != null && that.icon        != null && !this.icon       .equals(that.icon       )) return false;
+		if (this.picture     != null && that.picture     != null && !this.picture    .equals(that.picture    )) return false;
+		if (this.ordinal     != null && that.ordinal     != null && !this.ordinal    .equals(that.ordinal    )) return false;
+		if (this.created     != null && that.created     != null && !this.created    .equals(that.created    )) return false;
+		if (this.modified    != null && that.modified    != null && !this.modified   .equals(that.modified   )) return false;
+		if (this.priority    != null && that.priority    != null && !this.priority   .equals(that.priority   )) return false;
+
+		//TODO could be optimized
+		return Stream.concat(this.extras.keySet().stream(), that.extras.keySet().stream()).distinct().noneMatch(n -> {
+			Value a = this.extras.get(n);
+			Value b = that.extras.get(n);
+			return a != null && b != null && !a.equals(b);
 		});
 	}
 

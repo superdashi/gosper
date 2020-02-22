@@ -26,7 +26,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.superdashi.gosper.framework.Namespace;
 import com.superdashi.gosper.item.Image;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.item.Value;
 import com.superdashi.gosper.item.Value.Type;
 
@@ -215,6 +217,10 @@ public final class Attrs {
 			});
 			orig = null;
 		}
+	}
+
+	Item itemizeWith(Space.Itemizer itemizer) {
+		return itemizer.itemize(map);
 	}
 
 	// private helper methods
