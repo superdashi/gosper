@@ -17,7 +17,9 @@
 package com.superdashi.gosper.graphdb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 public final class Tags {
 
@@ -66,6 +68,10 @@ public final class Tags {
 
 	public boolean remove(String tag) {
 		return remove(newTag(tag));
+	}
+
+	public Stream<Tag> stream() {
+		return Arrays.stream(list.toArray(new Tag[0]));
 	}
 
 	void populateData(List<Change> changes) {
