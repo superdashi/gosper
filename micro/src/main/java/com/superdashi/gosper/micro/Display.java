@@ -98,7 +98,6 @@ public final class Display {
 	private final ActivityContext activityContext;
 	private final List<Situation> situations = new ArrayList<>();
 	private final Map<Location, Situation> locations;
-	private final String[] activityItemInterpolate;
 	private final ScriptSession scriptSession;
 
 	//state only required until finished
@@ -108,8 +107,6 @@ public final class Display {
 	private Situation bar;
 	private Situation scrollbar;
 
-	// records the item that provides specific context to the activity (optional)
-	private Item contextItem = null;
 	private ActionsModel actions = ActionsModel.none();
 	// records the current action selected by the user
 	private final ActionModel selectedAction;
@@ -144,7 +141,6 @@ public final class Display {
 		this.spec = spec;
 		this.activityContext = activityContext;
 		this.scriptSession = scriptSession;
-		this.activityItemInterpolate = ItemModel.interpolatePropertiesFor(activityContext.activityItem());
 		selectedAction = activityContext.models().actionModel(Action.noAction());
 
 		IntRect bounds = spec.bounds;
@@ -188,16 +184,6 @@ public final class Display {
 
 	public CommonMark commonMark() {
 		return commonMark == null ? commonMark = CommonMark.defaultFor(spec.theme) : commonMark;
-	}
-
-	public Optional<Item> contextItem() {
-		return Optional.ofNullable(contextItem);
-	}
-
-	public void contextItem(Item contextItem) {
-		if (Objects.equals(contextItem, this.contextItem)) return; // nothing to do
-		this.contextItem = contextItem;
-		if (bar != null) updateBar();
 	}
 
 	public void actionsModel(ActionsModel actions) {
@@ -353,6 +339,12 @@ public final class Display {
 	}
 
 	// methods for framework to use
+
+	void updateBar() {
+		if (this.bar == null) return; // no bar to update
+		Bar bar = (Bar) this.bar.component;
+		bar.item( activityContext.titleItem() );
+	}
 
 	//TODO can this be eliminated? - still being used by driver
 	void requestRedraw() {
@@ -721,15 +713,6 @@ public final class Display {
 			backgroundPane.canvas().drawFrame(background.generate(backgroundPane.bounds()));
 		}
 		return requireComposite;
-	}
-
-	private void updateBar() {
-		Bar bar = (Bar) this.bar.component;
-		Item item = activityContext.activityItem();
-		if (activityItemInterpolate.length != 0 && contextItem != null) {
-			item = item.builder().interpolate(contextItem, activityItemInterpolate).build();
-		}
-		bar.item(item);
 	}
 
 	// static classes

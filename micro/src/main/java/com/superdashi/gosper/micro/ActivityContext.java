@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -80,6 +81,8 @@ public class ActivityContext {
 	private final Activities activities;
 	private final ActivityDetails activityDetails;
 
+	// records the item that provides specific context to the activity (optional - supplied by app)
+	private Item contextItem = null;
 	private DataInput requestedConclusion = null;
 	private ActivityLaunch requestedLaunch = null;
 
@@ -87,6 +90,9 @@ public class ActivityContext {
 	private boolean redrawEnqueued = false;
 	// used to indicate to activity that it is active - this is set immediately prior to activation
 	boolean active = false;
+
+	// used to interpolate the activity item for activity titling
+	private String[] activityItemInterpolate;
 
 	ActivityContext(ActivityDriver driver) {
 		this.manager = driver.manager;
@@ -122,6 +128,24 @@ public class ActivityContext {
 		items = new Items(appInstance.bundle, qualifier, false);
 		metaItems = new Items(appInstance.bundle, qualifier, true);
 		activities = new Activities(this);
+	}
+
+	public Optional<Item> contextItem() {
+		synchronized (manager.lock) {
+			return Optional.ofNullable(contextItem);
+		}
+	}
+
+	public void contextItem(Item contextItem) {
+		synchronized (manager.lock) {
+			if (Objects.equals(contextItem, this.contextItem)) return; // nothing to do
+			this.contextItem = contextItem;
+		}
+		if (isActivityThread()) {
+			driver.notifyContextItemChange();
+		} else {
+			perform(driver::notifyContextItemChange);
+		}
 	}
 
 	public DisplayConfiguration configureDisplay() {
@@ -272,6 +296,18 @@ public class ActivityContext {
 
 	Logger logger() {
 		return logger;
+	}
+
+	Item titleItem() {
+		// TODO cache this item?
+		Item item = activityItem();
+		if (activityItemInterpolate == null) {
+			activityItemInterpolate = ItemModel.interpolatePropertiesFor(item);
+		}
+		if (activityItemInterpolate.length != 0 && contextItem != null) {
+			item = item.builder().interpolate(contextItem, activityItemInterpolate).build();
+		}
+		return item;
 	}
 
 	DataInput requestedConclusion() {

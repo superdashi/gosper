@@ -30,6 +30,7 @@ import com.superdashi.gosper.device.EventSwitch;
 import com.superdashi.gosper.framework.Details;
 import com.superdashi.gosper.framework.Identity;
 import com.superdashi.gosper.item.Flavor;
+import com.superdashi.gosper.item.Item;
 import com.superdashi.gosper.logging.Logger;
 import com.superdashi.gosper.micro.Activity.State;
 import com.superdashi.gosper.micro.Display.FocusDir;
@@ -184,6 +185,11 @@ class ActivityDriver {
 	void assignDisplay(Display display) {
 		if (state != State.INITIALIZED) throw new IllegalStateException("cannot assign display when " + state);
 		this.display = display;
+	}
+
+	// must have lock and be called via executor
+	void notifyContextItemChange() {
+		if (display != null) display.updateBar();
 	}
 
 	// must have lock and be called via executor

@@ -56,6 +56,9 @@ class ActivityManager {
 	private ActivityDriver activeDriver;
 	private boolean halting = false;
 
+	// used to interpolate the activity item for activity titling
+	private String[] activityItemInterpolate;
+
 	ActivityManager(Interface face) throws InterruptedException {
 		assert face != null;
 		// hold a reference to the face, we need the runtime
